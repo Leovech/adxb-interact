@@ -2,7 +2,7 @@
 
 import { getProjectsForDistrict, Hierarchy } from "@/data/abu-dhabi";
 import { FilterState, DatePreset, defaultFilters } from "@/lib/filters";
-import { RotateCcw, Calendar, Search, ChevronDown, MapPin, Building2 } from "lucide-react";
+import { RotateCcw, Calendar, Search, ChevronDown, MapPin, Building2, X, Filter } from "lucide-react";
 import { useState, useMemo, useRef, useEffect } from "react";
 import { useT } from "@/i18n/LanguageContext";
 
@@ -187,10 +187,139 @@ export default function FilterPanel({
     setSearchFocused(false);
   };
 
-  const activeFilterCount = Object.entries(filters).filter(
-    ([key, val]) =>
-      val !== "" && val !== defaultFilters[key as keyof FilterState]
-  ).length;
+  // Build active filter chips
+  const activeChips = useMemo(() => {
+    const chips: { key: string; category: string; label: string; onRemove: () => void }[] = [];
+
+    if (filters.district) {
+      chips.push({
+        key: "district",
+        category: t("district"),
+        label: filters.district,
+        onRemove: () => update({ district: "", project: "" }),
+      });
+    }
+    if (filters.project) {
+      chips.push({
+        key: "project",
+        category: t("project"),
+        label: filters.project,
+        onRemove: () => update({ project: "" }),
+      });
+    }
+    if (filters.propertyType) {
+      const opt = propertyTypeOptions.find((o) => o.value === filters.propertyType);
+      chips.push({
+        key: "propertyType",
+        category: t("property_type"),
+        label: opt?.label || filters.propertyType,
+        onRemove: () => update({ propertyType: "" }),
+      });
+    }
+    if (filters.status) {
+      chips.push({
+        key: "status",
+        category: t("status"),
+        label: filters.status === "Off-Plan" ? t("off_plan") : t("ready"),
+        onRemove: () => update({ status: "" }),
+      });
+    }
+    if (filters.sequence) {
+      chips.push({
+        key: "sequence",
+        category: t("sale_type"),
+        label: filters.sequence === "Primary" ? t("primary") : t("secondary"),
+        onRemove: () => update({ sequence: "" }),
+      });
+    }
+    if (filters.assetClass) {
+      const opt = assetClassOptions.find((o) => o.value === filters.assetClass);
+      chips.push({
+        key: "assetClass",
+        category: t("asset_class"),
+        label: opt?.label || filters.assetClass,
+        onRemove: () => update({ assetClass: "" }),
+      });
+    }
+    if (filters.bedrooms) {
+      const opt = bedroomOptions.find((o) => o.value === filters.bedrooms);
+      chips.push({
+        key: "bedrooms",
+        category: t("bedrooms"),
+        label: opt?.label || filters.bedrooms,
+        onRemove: () => update({ bedrooms: "" }),
+      });
+    }
+    if (filters.searchQuery) {
+      chips.push({
+        key: "search",
+        category: t("search_transactions"),
+        label: `"${filters.searchQuery}"`,
+        onRemove: () => update({ searchQuery: "" }),
+      });
+    }
+    if (filters.datePreset !== defaultFilters.datePreset) {
+      const preset = datePresets.find((p) => p.value === filters.datePreset);
+      chips.push({
+        key: "datePreset",
+        category: t("time_period"),
+        label: preset?.label || filters.datePreset,
+        onRemove: () => update({ datePreset: defaultFilters.datePreset, dateFrom: "", dateTo: "" }),
+      });
+    }
+    if (filters.priceMin) {
+      chips.push({
+        key: "priceMin",
+        category: t("price_aed"),
+        label: `${t("min")}: ${Number(filters.priceMin).toLocaleString()}`,
+        onRemove: () => update({ priceMin: "" }),
+      });
+    }
+    if (filters.priceMax) {
+      chips.push({
+        key: "priceMax",
+        category: t("price_aed"),
+        label: `${t("max")}: ${Number(filters.priceMax).toLocaleString()}`,
+        onRemove: () => update({ priceMax: "" }),
+      });
+    }
+    if (filters.sizeMin) {
+      chips.push({
+        key: "sizeMin",
+        category: t("size_sqft"),
+        label: `${t("min")}: ${Number(filters.sizeMin).toLocaleString()}`,
+        onRemove: () => update({ sizeMin: "" }),
+      });
+    }
+    if (filters.sizeMax) {
+      chips.push({
+        key: "sizeMax",
+        category: t("size_sqft"),
+        label: `${t("max")}: ${Number(filters.sizeMax).toLocaleString()}`,
+        onRemove: () => update({ sizeMax: "" }),
+      });
+    }
+    if (filters.rateMin) {
+      chips.push({
+        key: "rateMin",
+        category: t("rate_aed_sqft"),
+        label: `${t("min")}: ${Number(filters.rateMin).toLocaleString()}`,
+        onRemove: () => update({ rateMin: "" }),
+      });
+    }
+    if (filters.rateMax) {
+      chips.push({
+        key: "rateMax",
+        category: t("rate_aed_sqft"),
+        label: `${t("max")}: ${Number(filters.rateMax).toLocaleString()}`,
+        onRemove: () => update({ rateMax: "" }),
+      });
+    }
+
+    return chips;
+  }, [filters, t, propertyTypeOptions, assetClassOptions, bedroomOptions, datePresets, update]);
+
+  const activeFilterCount = activeChips.length;
 
   const selectClass =
     "w-full rounded-lg border border-input-border bg-input-bg px-3 py-2.5 text-sm text-foreground outline-none transition-colors focus:border-accent focus:ring-1 focus:ring-accent/30";
@@ -220,12 +349,51 @@ export default function FilterPanel({
         </div>
         <button
           onClick={() => onChange(defaultFilters)}
-          className="flex items-center gap-1.5 rounded-lg border border-input-border px-3 py-2 text-xs font-medium text-muted transition-colors hover:border-negative hover:text-negative"
+          className={`flex items-center gap-1.5 rounded-lg border px-3 py-2 text-xs font-medium transition-colors ${
+            activeFilterCount > 0
+              ? "border-negative/40 bg-negative/10 text-negative hover:bg-negative/20"
+              : "border-input-border text-muted hover:border-negative hover:text-negative"
+          }`}
         >
           <RotateCcw className="h-3 w-3" />
           {t("clear_all")}
         </button>
       </div>
+
+      {/* Active Filter Chips */}
+      {activeFilterCount > 0 && (
+        <div className="flex flex-wrap items-center gap-2 border-b border-card-border bg-accent/5 px-5 py-3">
+          <div className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wider text-muted">
+            <Filter className="h-3 w-3" />
+            {t("filters")}:
+          </div>
+          {activeChips.map((chip) => (
+            <span
+              key={chip.key}
+              className="group inline-flex items-center gap-1.5 rounded-full border border-accent/30 bg-accent/10 py-1 pe-1.5 ps-2.5 text-xs transition-all hover:border-accent/50 hover:bg-accent/15"
+            >
+              <span className="text-[10px] font-semibold text-muted">{chip.category}:</span>
+              <span className="font-medium text-foreground">{chip.label}</span>
+              <button
+                onClick={chip.onRemove}
+                className="flex h-4 w-4 items-center justify-center rounded-full text-muted transition-colors hover:bg-negative/20 hover:text-negative"
+                title={t("clear_all")}
+              >
+                <X className="h-3 w-3" />
+              </button>
+            </span>
+          ))}
+          {activeFilterCount > 1 && (
+            <button
+              onClick={() => onChange(defaultFilters)}
+              className="ms-auto flex items-center gap-1 rounded-full bg-negative/10 px-2.5 py-1 text-[11px] font-semibold text-negative transition-colors hover:bg-negative/20"
+            >
+              <X className="h-3 w-3" />
+              {t("clear_all")}
+            </button>
+          )}
+        </div>
+      )}
 
       {/* Search Box with Autocomplete */}
       <div className="border-b border-card-border px-5 py-4">
