@@ -37,8 +37,10 @@ export interface FilterState {
   propertyType: string;
   transactionType: string;
   status: string;
-  bedroomsMin: string;
-  bedroomsMax: string;
+  bedrooms: string;
+  bathrooms: string;
+  maidsRoom: string;
+  searchQuery: string;
   priceMin: string;
   priceMax: string;
   sizeMin: string;
@@ -57,8 +59,10 @@ export const defaultFilters: FilterState = {
   propertyType: "",
   transactionType: "",
   status: "",
-  bedroomsMin: "",
-  bedroomsMax: "",
+  bedrooms: "",
+  bathrooms: "",
+  maidsRoom: "",
+  searchQuery: "",
   priceMin: "",
   priceMax: "",
   sizeMin: "",
@@ -128,6 +132,8 @@ export function applyFilters(
 ): Transaction[] {
   const { start, end } = getDateRange(filters.datePreset, filters.dateFrom, filters.dateTo);
 
+  const searchLower = filters.searchQuery ? filters.searchQuery.toLowerCase() : "";
+
   return data.filter((tx) => {
     const txDate = parseISO(tx.date);
 
@@ -141,8 +147,36 @@ export function applyFilters(
     if (filters.paymentMethod && tx.paymentMethod !== filters.paymentMethod) return false;
     if (filters.developer && tx.developer !== filters.developer) return false;
 
-    if (filters.bedroomsMin && tx.bedrooms < parseInt(filters.bedroomsMin)) return false;
-    if (filters.bedroomsMax && tx.bedrooms > parseInt(filters.bedroomsMax)) return false;
+    // Bedrooms: exact match, "6+" means 6 or more
+    if (filters.bedrooms) {
+      if (filters.bedrooms === "6+") {
+        if (tx.bedrooms < 6) return false;
+      } else {
+        if (tx.bedrooms !== parseInt(filters.bedrooms)) return false;
+      }
+    }
+
+    // Bathrooms: exact match, "4+" means 4 or more
+    if (filters.bathrooms) {
+      if (filters.bathrooms === "4+") {
+        if (tx.bathrooms < 4) return false;
+      } else {
+        if (tx.bathrooms !== parseInt(filters.bathrooms)) return false;
+      }
+    }
+
+    // Maid's room
+    if (filters.maidsRoom) {
+      if (filters.maidsRoom === "yes" && !tx.maidsRoom) return false;
+      if (filters.maidsRoom === "no" && tx.maidsRoom) return false;
+    }
+
+    // Search query: case-insensitive match against area, project, building, or developer
+    if (searchLower) {
+      const haystack = `${tx.area} ${tx.project} ${tx.building} ${tx.developer}`.toLowerCase();
+      if (!haystack.includes(searchLower)) return false;
+    }
+
     if (filters.priceMin && tx.price < parseInt(filters.priceMin)) return false;
     if (filters.priceMax && tx.price > parseInt(filters.priceMax)) return false;
     if (filters.sizeMin && tx.size < parseInt(filters.sizeMin)) return false;

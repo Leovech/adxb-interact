@@ -6,7 +6,7 @@ import {
   getBuildingsForProject,
 } from "@/data/abu-dhabi";
 import { FilterState, DatePreset, defaultFilters } from "@/lib/filters";
-import { Filter, RotateCcw, Calendar, Search } from "lucide-react";
+import { RotateCcw, Calendar, Search } from "lucide-react";
 import { useState, useMemo } from "react";
 
 interface FilterPanelProps {
@@ -58,6 +58,31 @@ const paymentOptions = [
   { value: "", label: "All" },
   { value: "Cash", label: "Cash" },
   { value: "Mortgage", label: "Mortgage" },
+];
+
+const bedroomOptions = [
+  { value: "", label: "All" },
+  { value: "0", label: "Studio" },
+  { value: "1", label: "1 BR" },
+  { value: "2", label: "2 BR" },
+  { value: "3", label: "3 BR" },
+  { value: "4", label: "4 BR" },
+  { value: "5", label: "5 BR" },
+  { value: "6+", label: "6+ BR" },
+];
+
+const bathroomOptions = [
+  { value: "", label: "All" },
+  { value: "1", label: "1" },
+  { value: "2", label: "2" },
+  { value: "3", label: "3" },
+  { value: "4+", label: "4+" },
+];
+
+const maidsRoomOptions = [
+  { value: "", label: "All" },
+  { value: "yes", label: "Yes" },
+  { value: "no", label: "No" },
 ];
 
 const developers = [
@@ -176,6 +201,20 @@ export default function FilterPanel({
         </button>
       </div>
 
+      {/* Search Box */}
+      <div className="border-b border-card-border px-5 py-4">
+        <div className="relative">
+          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted" />
+          <input
+            type="text"
+            placeholder="Search area, project, building, developer..."
+            value={filters.searchQuery}
+            onChange={(e) => update({ searchQuery: e.target.value })}
+            className="w-full rounded-lg border border-input-border bg-input-bg py-2.5 pl-10 pr-3 text-sm text-foreground outline-none transition-colors placeholder:text-muted/60 focus:border-accent focus:ring-1 focus:ring-accent/30"
+          />
+        </div>
+      </div>
+
       {/* Property Type Pills */}
       <div className="border-b border-card-border px-5 py-4">
         <PillGroup
@@ -208,7 +247,29 @@ export default function FilterPanel({
         />
       </div>
 
-      {/* Location: Area → Project → Building */}
+      {/* Bedrooms + Bathrooms + Maid's Room pills */}
+      <div className="grid grid-cols-1 gap-4 border-b border-card-border px-5 py-4 sm:grid-cols-3">
+        <PillGroup
+          label="Bedrooms"
+          options={bedroomOptions}
+          value={filters.bedrooms}
+          onChange={(v) => update({ bedrooms: v })}
+        />
+        <PillGroup
+          label="Bathrooms"
+          options={bathroomOptions}
+          value={filters.bathrooms}
+          onChange={(v) => update({ bathrooms: v })}
+        />
+        <PillGroup
+          label="Maid's Room"
+          options={maidsRoomOptions}
+          value={filters.maidsRoom}
+          onChange={(v) => update({ maidsRoom: v })}
+        />
+      </div>
+
+      {/* Location: Area -> Project -> Building */}
       <div className="border-b border-card-border px-5 py-4">
         <label className="mb-2 block text-[11px] font-semibold uppercase tracking-wider text-muted">
           Location
@@ -300,16 +361,16 @@ export default function FilterPanel({
         )}
       </div>
 
-      {/* Price, Size, Bedrooms, Developer */}
+      {/* Price, Size & Developer - expandable */}
       <div className="px-5 py-4">
         <button
           onClick={() => setShowRanges(!showRanges)}
           className="mb-3 text-[11px] font-semibold uppercase tracking-wider text-accent hover:underline"
         >
-          {showRanges ? "- Hide" : "+ Show"} Price, Size, Bedrooms & Developer
+          {showRanges ? "- Hide" : "+ Show"} Price, Size & Developer
         </button>
         {showRanges && (
-          <div className="animate-fade-in grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="animate-fade-in grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
             {/* Price Range */}
             <div>
               <label className="mb-1.5 block text-xs font-medium text-muted">
@@ -350,32 +411,6 @@ export default function FilterPanel({
                   placeholder="Max"
                   value={filters.sizeMax}
                   onChange={(e) => update({ sizeMax: e.target.value })}
-                  className={inputClass}
-                />
-              </div>
-            </div>
-            {/* Bedrooms */}
-            <div>
-              <label className="mb-1.5 block text-xs font-medium text-muted">
-                Bedrooms
-              </label>
-              <div className="flex gap-2">
-                <input
-                  type="number"
-                  min="0"
-                  max="9"
-                  placeholder="Min"
-                  value={filters.bedroomsMin}
-                  onChange={(e) => update({ bedroomsMin: e.target.value })}
-                  className={inputClass}
-                />
-                <input
-                  type="number"
-                  min="0"
-                  max="9"
-                  placeholder="Max"
-                  value={filters.bedroomsMax}
-                  onChange={(e) => update({ bedroomsMax: e.target.value })}
                   className={inputClass}
                 />
               </div>

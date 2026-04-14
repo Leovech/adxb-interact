@@ -7,6 +7,7 @@ import FilterPanel from "@/components/FilterPanel";
 import MedianStats from "@/components/MedianStats";
 import TransactionTable from "@/components/TransactionTable";
 import Charts from "@/components/Charts";
+import TrendyProjects from "@/components/TrendyProjects";
 import MapView from "@/components/MapView";
 import PriceHistory from "@/components/PriceHistory";
 import { transactions } from "@/data/abu-dhabi";
@@ -47,6 +48,9 @@ export default function Home() {
 
           {/* Charts */}
           <Charts data={filtered} />
+
+          {/* Trendy Projects - top projects by month */}
+          <TrendyProjects data={filtered} />
 
           {/* Price History - repeat sales tracker */}
           <PriceHistory data={filtered} />
