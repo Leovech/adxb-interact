@@ -2,8 +2,8 @@
 
 import { getProjectsForDistrict, Hierarchy } from "@/data/abu-dhabi";
 import { FilterState, DatePreset, defaultFilters } from "@/lib/filters";
-import { RotateCcw, Calendar, Search, ChevronDown } from "lucide-react";
-import { useState, useMemo } from "react";
+import { RotateCcw, Calendar, Search, ChevronDown, MapPin, Building2 } from "lucide-react";
+import { useState, useMemo, useRef, useEffect } from "react";
 
 interface FilterPanelProps {
   filters: FilterState;
@@ -115,6 +115,19 @@ export default function FilterPanel({
   hierarchy,
 }: FilterPanelProps) {
   const [showRanges, setShowRanges] = useState(false);
+  const [searchFocused, setSearchFocused] = useState(false);
+  const searchRef = useRef<HTMLDivElement>(null);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (searchRef.current && !searchRef.current.contains(e.target as Node)) {
+        setSearchFocused(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   const sortedDistricts = useMemo(
     () => [...hierarchy.districts].sort((a, b) => b.count - a.count),
@@ -131,12 +144,45 @@ export default function FilterPanel({
     [hierarchy, filters.district]
   );
 
+  // Autocomplete suggestions
+  const suggestions = useMemo(() => {
+    const q = filters.searchQuery.toLowerCase().trim();
+    if (q.length < 2) return { districts: [], projects: [] };
+
+    const matchedDistricts = hierarchy.districts
+      .filter((d) => d.name.toLowerCase().includes(q))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 5);
+
+    const matchedProjects = hierarchy.projects
+      .filter((p) => p.name.toLowerCase().includes(q) || p.district.toLowerCase().includes(q))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 8);
+
+    return { districts: matchedDistricts, projects: matchedProjects };
+  }, [filters.searchQuery, hierarchy]);
+
+  const showDropdown =
+    searchFocused &&
+    filters.searchQuery.length >= 2 &&
+    (suggestions.districts.length > 0 || suggestions.projects.length > 0);
+
   const update = (partial: Partial<FilterState>) => {
     const next = { ...filters, ...partial };
     if (partial.district !== undefined) {
       next.project = "";
     }
     onChange(next);
+  };
+
+  const selectDistrict = (name: string) => {
+    update({ district: name, searchQuery: "" });
+    setSearchFocused(false);
+  };
+
+  const selectProject = (projectName: string, districtName: string) => {
+    update({ district: districtName, project: projectName, searchQuery: "" });
+    setSearchFocused(false);
   };
 
   const activeFilterCount = Object.entries(filters).filter(
@@ -179,17 +225,79 @@ export default function FilterPanel({
         </button>
       </div>
 
-      {/* Search Box */}
+      {/* Search Box with Autocomplete */}
       <div className="border-b border-card-border px-5 py-4">
-        <div className="relative">
+        <div className="relative" ref={searchRef}>
           <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted" />
           <input
             type="text"
             placeholder="Search district, project, community..."
             value={filters.searchQuery}
             onChange={(e) => update({ searchQuery: e.target.value })}
+            onFocus={() => setSearchFocused(true)}
             className="w-full rounded-lg border border-input-border bg-input-bg py-2.5 pl-10 pr-3 text-sm text-foreground outline-none transition-colors placeholder:text-muted/60 focus:border-accent focus:ring-1 focus:ring-accent/30"
           />
+
+          {/* Autocomplete Dropdown */}
+          {showDropdown && (
+            <div className="absolute left-0 right-0 top-full z-50 mt-1 max-h-80 overflow-y-auto rounded-xl border border-card-border bg-card-bg shadow-xl shadow-black/20">
+              {/* District matches */}
+              {suggestions.districts.length > 0 && (
+                <div className="border-b border-card-border px-3 py-2">
+                  <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-wider text-muted">
+                    Districts
+                  </p>
+                  {suggestions.districts.map((d) => (
+                    <button
+                      key={d.id}
+                      onClick={() => selectDistrict(d.name)}
+                      className="flex w-full items-center gap-2.5 rounded-lg px-2 py-2 text-left transition-colors hover:bg-input-bg"
+                    >
+                      <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-accent/10">
+                        <MapPin className="h-3.5 w-3.5 text-accent" />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-sm font-medium text-foreground">
+                          {d.name}
+                        </p>
+                        <p className="text-[11px] text-muted">
+                          {d.count.toLocaleString()} transactions &middot; {d.projectCount} projects
+                        </p>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              {/* Project matches */}
+              {suggestions.projects.length > 0 && (
+                <div className="px-3 py-2">
+                  <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-wider text-muted">
+                    Projects
+                  </p>
+                  {suggestions.projects.map((p) => (
+                    <button
+                      key={`${p.district}-${p.id}`}
+                      onClick={() => selectProject(p.name, p.district)}
+                      className="flex w-full items-center gap-2.5 rounded-lg px-2 py-2 text-left transition-colors hover:bg-input-bg"
+                    >
+                      <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-accent/5">
+                        <Building2 className="h-3.5 w-3.5 text-muted" />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-sm font-medium text-foreground">
+                          {p.name}
+                        </p>
+                        <p className="text-[11px] text-muted">
+                          {p.district} &middot; {p.count.toLocaleString()} transactions
+                        </p>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
         </div>
       </div>
 
