@@ -220,33 +220,36 @@ export function buildListingGroups(transactions: Transaction[]): ListingGroup[] 
     const typicalSize = Math.round(median(g.sizes));
 
     // Listing count scales with ADREC transaction volume.
-    // Property Finder + Bayut combined typically list 1.5-3x the 24-month
-    // transaction count for active projects (stale inventory accumulates),
-    // so we mirror that: base ≈ 1.8x tx count, capped at 220, floor at 12.
+    // Real per-bedroom-config inventory on PF+Bayut combined is usually
+    // 0.3-0.8x the 24-month transaction count (most unit types have 20-80
+    // active ads, not hundreds). Cap at 90, floor at 6.
     const listingCount = Math.min(
-      220,
-      Math.max(12, Math.round(g.count * 1.8) + Math.floor(seed() * 24))
+      90,
+      Math.max(6, Math.round(g.count * 0.45) + Math.floor(seed() * 6))
     );
 
     const listings: MLSListing[] = [];
     const today = new Date();
 
     for (let i = 0; i < listingCount; i++) {
-      // Price distribution:
-      //  60% overpriced (5-18% above market - typical)
-      //  25% fair (±5% of market)
-      //  15% distress (5-15% below market)
+      // Price distribution (tuned to match real PF/Bayut inventory):
+      //  50% fair (±3% of ADREC median) — most sellers price at market
+      //  35% modest premium (3-10% above) — small aspirational markup
+      //  10% softer (2-5% below) — motivated sellers, not distress
+      //   5% distress (5-11% below) — genuine below-market deals
       const r = seed();
       let priceMultiplier: number;
-      if (r < 0.15) {
-        priceMultiplier = 0.85 + seed() * 0.1; // 5-15% below
-      } else if (r < 0.4) {
-        priceMultiplier = 0.95 + seed() * 0.1; // ±5%
+      if (r < 0.05) {
+        priceMultiplier = 0.89 + seed() * 0.06; // 5-11% below
+      } else if (r < 0.15) {
+        priceMultiplier = 0.95 + seed() * 0.03; // 2-5% below
+      } else if (r < 0.65) {
+        priceMultiplier = 0.97 + seed() * 0.06; // ±3%
       } else {
-        priceMultiplier = 1.05 + seed() * 0.13; // 5-18% above
+        priceMultiplier = 1.03 + seed() * 0.07; // 3-10% above
       }
 
-      const sizeVariance = 0.82 + seed() * 0.36; // ±18% size variance
+      const sizeVariance = 0.9 + seed() * 0.2; // ±10% size variance
       const sizeSqft = Math.max(300, Math.round(typicalSize * sizeVariance));
       const askingRate = Math.round(adrecMedianRate * priceMultiplier);
       const askingPrice = Math.round((sizeSqft * askingRate) / 1000) * 1000;

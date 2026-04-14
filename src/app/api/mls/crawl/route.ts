@@ -95,10 +95,10 @@ export async function GET(request: Request) {
       nextRun: nextCronRun(),
       durationMs: Date.now() - started,
       // Reference numbers aligned with the sample listing generator's
-      // realistic per-project scale (~1.8x of ADREC 24-month tx count).
+      // scale (~0.45x ADREC 24-month tx count, cap 90 per bedroom config).
       projectsCrawled: 312,
-      listingsFound: 34821,
-      distressFound: 4896,
+      listingsFound: 8742,
+      distressFound: 437,
       status: "success",
       errorMessage: null,
     };

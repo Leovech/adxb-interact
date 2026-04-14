@@ -262,6 +262,8 @@ type TranslationStrings = {
   mls_open_pf: string;
   mls_open_bayut: string;
   mls_view_listing: string;
+  mls_search_pf: string;
+  mls_search_bayut: string;
   mls_market_median: string;
   size_sqft_short: string;
   aed_sqft_short: string;
@@ -520,7 +522,7 @@ const en: TranslationStrings = {
   mls_subtitle: "Compare asking prices on Property Finder & Bayut against real ADREC transaction data",
   mls_beta_badge: "BETA",
   mls_disclaimer_title: "Demo listings",
-  mls_disclaimer_text: "Property Finder and Bayut do not offer public APIs. Listings shown are sample data generated from ADREC medians with realistic price variance. 'View Listing' buttons deep-link to real search results on each platform so you can verify live prices. Production integration requires a paid MLS partnership.",
+  mls_disclaimer_text: "Property Finder and Bayut do not offer public APIs, so individual ad URLs aren't available. Listings shown are samples derived from ADREC transaction medians; 'Search on PF/Bayut' buttons open a pre-filtered search page on each platform so you can browse live inventory matching the flagged unit. Direct ad-level deep-linking requires a paid MLS partnership.",
   mls_total_listings: "Total Listings",
   mls_distress_deals: "Distress Deals",
   mls_distress_sub: "5%+ below market",
@@ -545,6 +547,8 @@ const en: TranslationStrings = {
   mls_open_pf: "Open on Property Finder",
   mls_open_bayut: "Open on Bayut",
   mls_view_listing: "View Listing",
+  mls_search_pf: "Search on PF",
+  mls_search_bayut: "Search on Bayut",
   mls_market_median: "Market",
   size_sqft_short: "sqft",
   aed_sqft_short: "AED/sqft",
@@ -803,7 +807,7 @@ const ar: TranslationStrings = {
   mls_subtitle: "قارن أسعار الطلب في Property Finder و Bayut مع بيانات المعاملات الفعلية من ADREC",
   mls_beta_badge: "تجريبي",
   mls_disclaimer_title: "إعلانات تجريبية",
-  mls_disclaimer_text: "لا توفر Property Finder و Bayut واجهات برمجية عامة. الإعلانات المعروضة هي بيانات نموذجية مولّدة من متوسطات ADREC مع تباين واقعي في الأسعار. أزرار 'عرض الإعلان' تربط مباشرة بنتائج البحث الفعلية على كل منصة. التكامل الإنتاجي يتطلب اشتراك MLS مدفوع.",
+  mls_disclaimer_text: "لا توفر Property Finder و Bayut واجهات برمجية عامة، لذا لا تتوفر روابط لإعلانات فردية. الإعلانات المعروضة عينات مشتقة من وسطاء معاملات ADREC؛ أزرار 'البحث في PF/Bayut' تفتح صفحة بحث مفلترة مسبقاً على كل منصة لتصفح المعروض الحي المطابق للوحدة. يتطلب الربط المباشر للإعلانات شراكة MLS مدفوعة.",
   mls_total_listings: "إجمالي الإعلانات",
   mls_distress_deals: "صفقات مميزة",
   mls_distress_sub: "٥٪+ تحت السوق",
@@ -828,6 +832,8 @@ const ar: TranslationStrings = {
   mls_open_pf: "افتح في Property Finder",
   mls_open_bayut: "افتح في Bayut",
   mls_view_listing: "عرض الإعلان",
+  mls_search_pf: "البحث في PF",
+  mls_search_bayut: "البحث في Bayut",
   mls_market_median: "السوق",
   size_sqft_short: "قدم²",
   aed_sqft_short: "درهم/قدم²",
@@ -1086,7 +1092,7 @@ const ru: TranslationStrings = {
   mls_subtitle: "Сравните цены на Property Finder и Bayut с реальными данными сделок ADREC",
   mls_beta_badge: "БЕТА",
   mls_disclaimer_title: "Демо-объявления",
-  mls_disclaimer_text: "Property Finder и Bayut не предоставляют публичных API. Показанные объявления — это образцы данных, созданные на основе медиан ADREC с реалистичной вариацией цен. Кнопки 'Просмотреть' ведут на реальные страницы поиска. Для продакшн-интеграции требуется платное MLS-партнёрство.",
+  mls_disclaimer_text: "Property Finder и Bayut не предоставляют публичных API, поэтому прямые ссылки на конкретные объявления недоступны. Показанные объявления — образцы, построенные на медианах сделок ADREC; кнопки 'Искать на PF/Bayut' открывают предварительно отфильтрованную страницу поиска на каждой платформе, чтобы посмотреть живое предложение по данной конфигурации. Прямые ссылки на конкретные объявления требуют платного MLS-партнёрства.",
   mls_total_listings: "Всего объявлений",
   mls_distress_deals: "Срочные сделки",
   mls_distress_sub: "5%+ ниже рынка",
@@ -1111,6 +1117,8 @@ const ru: TranslationStrings = {
   mls_open_pf: "Открыть на Property Finder",
   mls_open_bayut: "Открыть на Bayut",
   mls_view_listing: "Просмотреть",
+  mls_search_pf: "Искать на PF",
+  mls_search_bayut: "Искать на Bayut",
   mls_market_median: "Рынок",
   size_sqft_short: "кв.фт",
   aed_sqft_short: "AED/кв.фт",

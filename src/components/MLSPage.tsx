@@ -987,7 +987,10 @@ function DistressCard({
           {t("mls_market_median")}: <span className="text-foreground">{listing.adrecMedianRate.toLocaleString()}</span>
         </span>
         <span className="inline-flex items-center gap-1 text-accent group-hover:underline">
-          {t("mls_view_listing")}<ExternalLink className="h-3 w-3" />
+          {listing.platform === "propertyfinder"
+            ? t("mls_search_pf")
+            : t("mls_search_bayut")}
+          <ExternalLink className="h-3 w-3" />
         </span>
       </div>
     </a>
