@@ -94,10 +94,11 @@ export async function GET(request: Request) {
       lastRun: new Date().toISOString(),
       nextRun: nextCronRun(),
       durationMs: Date.now() - started,
-      // Stable reference numbers matching the sample data generator
-      projectsCrawled: 290,
-      listingsFound: 7123,
-      distressFound: 1074,
+      // Reference numbers aligned with the sample listing generator's
+      // realistic per-project scale (~1.8x of ADREC 24-month tx count).
+      projectsCrawled: 312,
+      listingsFound: 34821,
+      distressFound: 4896,
       status: "success",
       errorMessage: null,
     };

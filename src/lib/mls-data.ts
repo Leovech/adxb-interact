@@ -202,10 +202,13 @@ export function buildListingGroups(transactions: Transaction[]): ListingGroup[] 
     const adrecMedianRate = median(g.rates);
     const typicalSize = Math.round(median(g.sizes));
 
-    // Listing count scales with ADREC transaction volume (more active projects = more listings)
+    // Listing count scales with ADREC transaction volume.
+    // Property Finder + Bayut combined typically list 1.5-3x the 24-month
+    // transaction count for active projects (stale inventory accumulates),
+    // so we mirror that: base ≈ 1.8x tx count, capped at 220, floor at 12.
     const listingCount = Math.min(
-      25,
-      Math.max(3, Math.round(g.count * 0.15) + Math.floor(seed() * 5))
+      220,
+      Math.max(12, Math.round(g.count * 1.8) + Math.floor(seed() * 24))
     );
 
     const listings: MLSListing[] = [];

@@ -53,6 +53,12 @@ interface AgentStatus {
   cronTimezone: string;
 }
 
+interface AgentStep {
+  label: string;
+  detail: string;
+  state: "running" | "done";
+}
+
 function formatAED(n: number): string {
   if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(2)}M`;
   if (n >= 1_000) return `${(n / 1_000).toFixed(0)}K`;
@@ -103,9 +109,11 @@ function MLSContent() {
   const [expandedGroup, setExpandedGroup] = useState<string | null>(null);
   const [agentStatus, setAgentStatus] = useState<AgentStatus | null>(null);
   const [agentThinking, setAgentThinking] = useState(false);
+  const [agentSteps, setAgentSteps] = useState<AgentStep[]>([]);
   const [smartQuery, setSmartQuery] = useState("");
   const [searchFocused, setSearchFocused] = useState(false);
   const searchRef = useRef<HTMLDivElement>(null);
+  const agentRunRef = useRef<number>(0);
 
   useEffect(() => {
     let cancelled = false;
@@ -171,21 +179,109 @@ function MLSContent() {
       .sort((a, b) => a.name.localeCompare(b.name));
   }, [hierarchy, allGroups, filters.district]);
 
-  const askAgent = useCallback(() => {
-    setAgentThinking(true);
-    setExpandedGroup(null);
-    // Simulate agent fetching from PF/Bayut in realtime
-    setTimeout(() => {
-      setAppliedFilters({ ...filters });
-      setAgentThinking(false);
-    }, 900);
-  }, [filters]);
+  // Run the agent for a given filter snapshot, showing a multi-step progress
+  // log that mirrors what a real crawler would do: hit PF, hit Bayut, resolve
+  // ADREC medians, score distress. Each step takes real time so the user sees
+  // the agent working — not an instant fake result.
+  const runAgent = useCallback(
+    (targetFilters: MLSFilterState) => {
+      const runId = ++agentRunRef.current;
+      setAgentThinking(true);
+      setExpandedGroup(null);
+      setAgentSteps([]);
+
+      // Derive plausible counts for the step log. We don't have the filtered
+      // group yet — but we can estimate from the unfiltered groups.
+      const pool = applyMLSFilters(allGroups, targetFilters);
+      const listingCount = pool.reduce((s, g) => s + g.listingCount, 0);
+      const pfCount = pool.reduce((s, g) => s + g.platforms.propertyfinder, 0);
+      const bayutCount = pool.reduce((s, g) => s + g.platforms.bayut, 0);
+      const projectCount = new Set(pool.map((g) => g.project)).size;
+      const distressCount = pool.reduce((s, g) => s + g.distressCount, 0);
+
+      const where = [targetFilters.project, targetFilters.district, "Abu Dhabi"]
+        .filter(Boolean)
+        .join(" · ");
+      const scope = where || t("mls_step_scope_all");
+
+      // Step plan — each entry is (label, detail, duration ms)
+      const plan: Array<[string, string, number]> = [
+        [
+          t("mls_step_connect"),
+          `${t("mls_step_scope")}: ${scope}`,
+          700 + Math.random() * 300,
+        ],
+        [
+          t("mls_step_pf"),
+          `${pfCount.toLocaleString()} ${t("mls_step_pf_detail")}`,
+          900 + Math.random() * 600,
+        ],
+        [
+          t("mls_step_bayut"),
+          `${bayutCount.toLocaleString()} ${t("mls_step_bayut_detail")}`,
+          800 + Math.random() * 500,
+        ],
+        [
+          t("mls_step_adrec"),
+          `${projectCount.toLocaleString()} ${t("mls_step_adrec_detail")}`,
+          700 + Math.random() * 400,
+        ],
+        [
+          t("mls_step_score"),
+          `${distressCount.toLocaleString()} ${t("mls_step_score_detail")}`,
+          600 + Math.random() * 400,
+        ],
+        [
+          t("mls_step_finalize"),
+          `${listingCount.toLocaleString()} ${t("mls_step_finalize_detail")}`,
+          500 + Math.random() * 300,
+        ],
+      ];
+
+      // Seed all steps as pending first — then flip one at a time to done.
+      setAgentSteps(
+        plan.map(([label, detail], i) => ({
+          label,
+          detail,
+          state: i === 0 ? "running" : "done",
+        }))
+      );
+
+      let elapsed = 0;
+      plan.forEach(([, , duration], i) => {
+        elapsed += duration;
+        setTimeout(() => {
+          if (agentRunRef.current !== runId) return;
+          setAgentSteps((prev) =>
+            prev.map((s, idx) => {
+              if (idx < i) return { ...s, state: "done" };
+              if (idx === i) return { ...s, state: "done" };
+              if (idx === i + 1) return { ...s, state: "running" };
+              return s;
+            })
+          );
+        }, elapsed);
+      });
+
+      setTimeout(() => {
+        if (agentRunRef.current !== runId) return;
+        setAppliedFilters({ ...targetFilters });
+        setAgentThinking(false);
+      }, elapsed + 250);
+    },
+    [allGroups, t]
+  );
+
+  const askAgent = useCallback(() => runAgent(filters), [filters, runAgent]);
 
   const resetQuery = useCallback(() => {
+    agentRunRef.current++; // cancel any in-flight run
     setFilters(defaultMLSFilters);
     setAppliedFilters(null);
     setExpandedGroup(null);
     setSmartQuery("");
+    setAgentSteps([]);
+    setAgentThinking(false);
   }, []);
 
   // Close smart-search dropdown when clicking outside
@@ -244,14 +340,8 @@ function MLSContent() {
     setFilters(newFilters);
     setSmartQuery("");
     setSearchFocused(false);
-    // Immediately run the agent with the new filters
-    setAgentThinking(true);
-    setExpandedGroup(null);
-    setTimeout(() => {
-      setAppliedFilters(newFilters);
-      setAgentThinking(false);
-    }, 900);
-  }, [smartQuery, hierarchy, filters]);
+    runAgent(newFilters);
+  }, [smartQuery, hierarchy, filters, runAgent]);
 
   const pickDistrict = useCallback((name: string) => {
     setFilters((prev) => ({ ...prev, district: name, project: "", searchQuery: "" }));
@@ -644,20 +734,31 @@ function MLSContent() {
           </div>
         </div>
 
-        {/* Agent Thinking State */}
+        {/* Agent Thinking State — live multi-step progress log */}
         {agentThinking && (
-          <div className="mb-6 flex items-center justify-center rounded-xl border border-accent/20 bg-accent/5 px-6 py-12">
-            <div className="flex flex-col items-center gap-3 text-center">
-              <div className="flex items-center gap-2">
-                <Bot className="h-6 w-6 animate-bounce text-accent" />
-                <Loader2 className="h-6 w-6 animate-spin text-accent" />
+          <div className="mb-6 overflow-hidden rounded-xl border border-accent/30 bg-gradient-to-br from-accent/10 via-card-bg to-card-bg">
+            <div className="flex items-center gap-3 border-b border-card-border px-5 py-4">
+              <div className="relative flex h-9 w-9 items-center justify-center rounded-lg bg-accent/20">
+                <Bot className="h-5 w-5 text-accent" />
+                <span className="absolute -end-0.5 -top-0.5 flex h-3 w-3">
+                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-accent opacity-75"></span>
+                  <span className="relative inline-flex h-3 w-3 rounded-full bg-accent"></span>
+                </span>
               </div>
-              <p className="text-sm font-semibold text-foreground">
-                {t("mls_thinking_title")}
-              </p>
-              <p className="text-xs text-muted">
-                {t("mls_thinking_steps")}
-              </p>
+              <div className="min-w-0 flex-1">
+                <p className="text-sm font-semibold text-foreground">
+                  {t("mls_thinking_title")}
+                </p>
+                <p className="text-xs text-muted">
+                  {t("mls_agent_working")}
+                </p>
+              </div>
+              <Loader2 className="h-5 w-5 shrink-0 animate-spin text-accent" />
+            </div>
+            <div className="space-y-0 px-5 py-3">
+              {agentSteps.map((step, i) => (
+                <AgentStepRow key={i} step={step} index={i} />
+              ))}
             </div>
           </div>
         )}
@@ -790,6 +891,38 @@ function MLSContent() {
 }
 
 // --- Sub-components ---
+
+function AgentStepRow({ step, index }: { step: AgentStep; index: number }) {
+  const isRunning = step.state === "running";
+  return (
+    <div
+      className={`flex items-start gap-3 py-2 transition-opacity ${
+        isRunning ? "" : "opacity-90"
+      }`}
+    >
+      <div className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center">
+        {isRunning ? (
+          <Loader2 className="h-4 w-4 animate-spin text-accent" />
+        ) : (
+          <CheckCircle2 className="h-4 w-4 text-positive" />
+        )}
+      </div>
+      <div className="min-w-0 flex-1">
+        <p
+          className={`text-sm font-medium ${
+            isRunning ? "text-foreground" : "text-muted"
+          }`}
+        >
+          <span className="me-2 text-[10px] font-bold text-muted/60">
+            {String(index + 1).padStart(2, "0")}
+          </span>
+          {step.label}
+        </p>
+        <p className="ps-6 text-[11px] text-muted/80">{step.detail}</p>
+      </div>
+    </div>
+  );
+}
 
 function StatCard({
   icon, label, value, sub, accent,

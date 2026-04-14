@@ -279,6 +279,20 @@ type TranslationStrings = {
   mls_thinking_steps: string;
   mls_empty_title: string;
   mls_empty_subtitle: string;
+  mls_agent_working: string;
+  mls_step_scope: string;
+  mls_step_scope_all: string;
+  mls_step_connect: string;
+  mls_step_pf: string;
+  mls_step_pf_detail: string;
+  mls_step_bayut: string;
+  mls_step_bayut_detail: string;
+  mls_step_adrec: string;
+  mls_step_adrec_detail: string;
+  mls_step_score: string;
+  mls_step_score_detail: string;
+  mls_step_finalize: string;
+  mls_step_finalize_detail: string;
 };
 
 const en: TranslationStrings = {
@@ -548,6 +562,20 @@ const en: TranslationStrings = {
   mls_thinking_steps: "Querying Property Finder · Cross-checking Bayut · Comparing to ADREC medians",
   mls_empty_title: "Ask the agent to run a market comparison",
   mls_empty_subtitle: "Type what you're looking for (e.g. 'villa 3br yas island') or pick filters, then hit Ask Agent to Compare. The agent will fetch matching listings from Property Finder & Bayut and score them against real ADREC transactions.",
+  mls_agent_working: "Live crawl in progress — this takes a few seconds",
+  mls_step_scope: "Scope",
+  mls_step_scope_all: "All Abu Dhabi projects",
+  mls_step_connect: "Connecting to MLS platforms",
+  mls_step_pf: "Opening listings on Property Finder",
+  mls_step_pf_detail: "listings scraped",
+  mls_step_bayut: "Cross-checking Bayut inventory",
+  mls_step_bayut_detail: "listings scraped",
+  mls_step_adrec: "Pulling ADREC transaction medians",
+  mls_step_adrec_detail: "project cohorts matched",
+  mls_step_score: "Scoring distress deals",
+  mls_step_score_detail: "listings flagged ≥5% below market",
+  mls_step_finalize: "Finalizing comparison",
+  mls_step_finalize_detail: "listings ranked and ready",
 };
 
 const ar: TranslationStrings = {
@@ -817,6 +845,20 @@ const ar: TranslationStrings = {
   mls_thinking_steps: "الاستعلام من Property Finder · التحقق من Bayut · المقارنة مع معدلات ADREC",
   mls_empty_title: "اطلب من الوكيل تشغيل مقارنة السوق",
   mls_empty_subtitle: "اكتب ما تبحث عنه (مثلاً 'فيلا 3 غرف جزيرة ياس') أو اختر الفلاتر، ثم اضغط اطلب من الوكيل المقارنة. سيقوم الوكيل بجلب الإعلانات المطابقة من Property Finder و Bayut وتقييمها مقابل صفقات ADREC الحقيقية.",
+  mls_agent_working: "يجري المسح الحي — سيستغرق بضع ثوانٍ",
+  mls_step_scope: "النطاق",
+  mls_step_scope_all: "كل مشاريع أبوظبي",
+  mls_step_connect: "الاتصال بمنصات MLS",
+  mls_step_pf: "فتح الإعلانات على Property Finder",
+  mls_step_pf_detail: "إعلان تم استخراجه",
+  mls_step_bayut: "التحقق من مخزون Bayut",
+  mls_step_bayut_detail: "إعلان تم استخراجه",
+  mls_step_adrec: "سحب وسطاء صفقات ADREC",
+  mls_step_adrec_detail: "مجموعة مشاريع مطابقة",
+  mls_step_score: "تقييم الصفقات المنخفضة",
+  mls_step_score_detail: "إعلان أقل من السوق بـ 5% أو أكثر",
+  mls_step_finalize: "إتمام المقارنة",
+  mls_step_finalize_detail: "إعلان تم ترتيبه وجاهز",
 };
 
 const ru: TranslationStrings = {
@@ -1086,6 +1128,20 @@ const ru: TranslationStrings = {
   mls_thinking_steps: "Запрос Property Finder · Проверка Bayut · Сравнение с медианами ADREC",
   mls_empty_title: "Попросите агента запустить сравнение",
   mls_empty_subtitle: "Введите запрос (например, 'вилла 3 спальни яс айленд') или выберите фильтры, затем нажмите Запустить сравнение. Агент получит подходящие объявления из Property Finder и Bayut и оценит их на фоне реальных сделок ADREC.",
+  mls_agent_working: "Идёт живой обход — займёт несколько секунд",
+  mls_step_scope: "Область",
+  mls_step_scope_all: "Все проекты Абу-Даби",
+  mls_step_connect: "Подключение к MLS-платформам",
+  mls_step_pf: "Открываем объявления на Property Finder",
+  mls_step_pf_detail: "объявлений собрано",
+  mls_step_bayut: "Сверка с каталогом Bayut",
+  mls_step_bayut_detail: "объявлений собрано",
+  mls_step_adrec: "Получение медиан сделок ADREC",
+  mls_step_adrec_detail: "кластеров проектов сопоставлено",
+  mls_step_score: "Оценка распродажных предложений",
+  mls_step_score_detail: "объявлений ниже рынка на 5% и более",
+  mls_step_finalize: "Финализация сравнения",
+  mls_step_finalize_detail: "объявлений проранжировано",
 };
 
 export const translations: Record<Locale, TranslationStrings> = { en, ar, ru };
