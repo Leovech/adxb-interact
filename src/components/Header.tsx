@@ -1,9 +1,10 @@
 "use client";
 
-import { Building2, Menu, X, Sun, Moon, Globe } from "lucide-react";
+import { Menu, X, Sun, Moon, Globe } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
 import { useLanguage, useT } from "@/i18n/LanguageContext";
 import { Locale, localeNames } from "@/i18n/translations";
+import LogoMark from "./LogoMark";
 
 export default function Header() {
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -74,8 +75,8 @@ export default function Header() {
       <div className="mx-auto flex h-16 max-w-[1440px] items-center justify-between px-4 lg:px-8">
         {/* Logo */}
         <a href="#" className="flex items-center gap-2.5">
-          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-accent/20">
-            <Building2 className="h-5 w-5 text-accent" />
+          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-accent/10 overflow-hidden">
+            <LogoMark className="h-8 w-8 text-foreground" />
           </div>
           <div className="flex flex-col">
             <span className="text-lg font-bold leading-tight tracking-tight text-foreground">

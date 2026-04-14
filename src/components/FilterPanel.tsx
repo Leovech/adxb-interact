@@ -2,8 +2,9 @@
 
 import { getProjectsForDistrict, Hierarchy } from "@/data/abu-dhabi";
 import { FilterState, DatePreset, defaultFilters } from "@/lib/filters";
-import { RotateCcw, Calendar, Search, ChevronDown, MapPin, Building2, X, Filter } from "lucide-react";
-import { useState, useMemo, useRef, useEffect } from "react";
+import { parseSmartSearch, applySmartSearch } from "@/lib/smart-search";
+import { RotateCcw, Calendar, Search, ChevronDown, MapPin, Building2, X, Filter, Sparkles, ArrowRight } from "lucide-react";
+import { useState, useMemo, useRef, useEffect, useCallback } from "react";
 import { useT } from "@/i18n/LanguageContext";
 
 interface FilterPanelProps {
@@ -58,6 +59,9 @@ export default function FilterPanel({
   const [showRanges, setShowRanges] = useState(false);
   const [searchFocused, setSearchFocused] = useState(false);
   const searchRef = useRef<HTMLDivElement>(null);
+  const [smartQuery, setSmartQuery] = useState("");
+
+  const smartSearchPlaceholder = t("search_placeholder");
 
   const datePresets: { value: DatePreset; label: string }[] = [
     { value: "all_time", label: t("all_time") },
@@ -148,7 +152,7 @@ export default function FilterPanel({
 
   // Autocomplete suggestions
   const suggestions = useMemo(() => {
-    const q = filters.searchQuery.toLowerCase().trim();
+    const q = smartQuery.toLowerCase().trim();
     if (q.length < 2) return { districts: [], projects: [] };
 
     const matchedDistricts = hierarchy.districts
@@ -162,12 +166,26 @@ export default function FilterPanel({
       .slice(0, 8);
 
     return { districts: matchedDistricts, projects: matchedProjects };
-  }, [filters.searchQuery, hierarchy]);
+  }, [smartQuery, hierarchy]);
 
-  const showDropdown =
+  // Smart search: parse query into filter candidates
+  const smartPreview = useMemo(
+    () => parseSmartSearch(smartQuery, hierarchy),
+    [smartQuery, hierarchy]
+  );
+
+  const showSmartPreview =
     searchFocused &&
-    filters.searchQuery.length >= 2 &&
-    (suggestions.districts.length > 0 || suggestions.projects.length > 0);
+    smartQuery.length >= 2 &&
+    (smartPreview.matchedTerms.length > 0 || suggestions.districts.length > 0 || suggestions.projects.length > 0);
+
+  const handleSmartApply = useCallback(() => {
+    const parsed = parseSmartSearch(smartQuery, hierarchy);
+    const newFilters = applySmartSearch(filters, parsed);
+    onChange(newFilters);
+    setSmartQuery("");
+    setSearchFocused(false);
+  }, [smartQuery, hierarchy, filters, onChange]);
 
   const update = (partial: Partial<FilterState>) => {
     const next = { ...filters, ...partial };
@@ -395,41 +413,109 @@ export default function FilterPanel({
         </div>
       )}
 
-      {/* Search Box with Autocomplete */}
+      {/* Smart Search Box */}
       <div className="border-b border-card-border px-5 py-4">
         <div className="relative" ref={searchRef}>
-          <Search className="pointer-events-none absolute start-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted" />
+          <Sparkles className="pointer-events-none absolute start-3 top-3.5 h-4 w-4 text-accent" />
           <input
             type="text"
-            placeholder={t("search_placeholder")}
-            value={filters.searchQuery}
-            onChange={(e) => update({ searchQuery: e.target.value })}
+            placeholder={smartSearchPlaceholder}
+            value={smartQuery}
+            onChange={(e) => setSmartQuery(e.target.value)}
             onFocus={() => setSearchFocused(true)}
-            className="w-full rounded-lg border border-input-border bg-input-bg py-2.5 ps-10 pe-3 text-sm text-foreground outline-none transition-colors placeholder:text-muted/60 focus:border-accent focus:ring-1 focus:ring-accent/30"
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && smartQuery.trim()) {
+                handleSmartApply();
+              }
+            }}
+            className="w-full rounded-lg border border-input-border bg-input-bg py-2.5 ps-10 pe-24 text-sm text-foreground outline-none transition-colors placeholder:text-muted/60 focus:border-accent focus:ring-1 focus:ring-accent/30"
           />
+          {smartQuery.trim() && (
+            <button
+              onClick={handleSmartApply}
+              className="absolute end-1.5 top-1.5 flex items-center gap-1.5 rounded-md bg-accent px-3 py-1.5 text-xs font-semibold text-background transition-colors hover:bg-accent-hover"
+            >
+              <ArrowRight className="h-3 w-3" />
+              {t("chat_send")}
+            </button>
+          )}
 
-          {/* Autocomplete Dropdown */}
-          {showDropdown && (
-            <div className="absolute start-0 end-0 top-full z-50 mt-1 max-h-80 overflow-y-auto rounded-xl border border-card-border bg-card-bg shadow-xl shadow-black/20">
-              {/* District matches */}
+          {/* Smart Search Preview Dropdown */}
+          {showSmartPreview && (
+            <div className="absolute start-0 end-0 top-full z-50 mt-1 rounded-xl border border-card-border bg-card-bg shadow-xl shadow-black/20">
+              {/* AI-parsed filters preview */}
+              {smartPreview.matchedTerms.length > 0 && (
+                <div className="border-b border-card-border px-4 py-3">
+                  <div className="mb-2 flex items-center gap-2">
+                    <Sparkles className="h-3 w-3 text-accent" />
+                    <span className="text-[10px] font-semibold uppercase tracking-wider text-accent">
+                      {t("smart_search_detected")}
+                    </span>
+                  </div>
+                  <div className="flex flex-wrap gap-1.5">
+                    {smartPreview.filters.propertyType && (
+                      <span className="rounded-full bg-accent/15 px-2.5 py-1 text-xs font-medium text-foreground">
+                        {t("property_type")}: <span className="text-accent">{smartPreview.filters.propertyType}</span>
+                      </span>
+                    )}
+                    {smartPreview.filters.district && (
+                      <span className="rounded-full bg-accent/15 px-2.5 py-1 text-xs font-medium text-foreground">
+                        {t("district")}: <span className="text-accent">{smartPreview.filters.district}</span>
+                      </span>
+                    )}
+                    {smartPreview.filters.project && (
+                      <span className="rounded-full bg-accent/15 px-2.5 py-1 text-xs font-medium text-foreground">
+                        {t("project")}: <span className="text-accent">{smartPreview.filters.project}</span>
+                      </span>
+                    )}
+                    {smartPreview.filters.status && (
+                      <span className="rounded-full bg-accent/15 px-2.5 py-1 text-xs font-medium text-foreground">
+                        {t("status")}: <span className="text-accent">{smartPreview.filters.status}</span>
+                      </span>
+                    )}
+                    {smartPreview.filters.sequence && (
+                      <span className="rounded-full bg-accent/15 px-2.5 py-1 text-xs font-medium text-foreground">
+                        {t("sale_type")}: <span className="text-accent">{smartPreview.filters.sequence}</span>
+                      </span>
+                    )}
+                    {smartPreview.filters.bedrooms && (
+                      <span className="rounded-full bg-accent/15 px-2.5 py-1 text-xs font-medium text-foreground">
+                        {t("bedrooms")}: <span className="text-accent">{bedroomOptions.find(o => o.value === smartPreview.filters.bedrooms)?.label || smartPreview.filters.bedrooms}</span>
+                      </span>
+                    )}
+                    {smartPreview.filters.assetClass && (
+                      <span className="rounded-full bg-accent/15 px-2.5 py-1 text-xs font-medium text-foreground">
+                        {t("asset_class")}: <span className="text-accent">{smartPreview.filters.assetClass}</span>
+                      </span>
+                    )}
+                  </div>
+                  <button
+                    onClick={handleSmartApply}
+                    className="mt-2.5 flex w-full items-center justify-center gap-2 rounded-lg bg-accent/10 py-2 text-xs font-semibold text-accent transition-colors hover:bg-accent/20"
+                  >
+                    <ArrowRight className="h-3 w-3" />
+                    {t("smart_search_apply")}
+                  </button>
+                </div>
+              )}
+
+              {/* District suggestions */}
               {suggestions.districts.length > 0 && (
-                <div className="border-b border-card-border px-3 py-2">
+                <div className={`px-3 py-2 ${smartPreview.matchedTerms.length > 0 ? "" : "border-b border-card-border"}`}>
                   <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-wider text-muted">
                     {t("districts")}
                   </p>
                   {suggestions.districts.map((d) => (
                     <button
                       key={d.id}
-                      onClick={() => selectDistrict(d.name)}
+                      onClick={() => { selectDistrict(d.name); setSmartQuery(""); }}
                       className="flex w-full items-center gap-2.5 rounded-lg px-2 py-2 text-left transition-colors hover:bg-input-bg"
                     >
                       <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-accent/10">
                         <MapPin className="h-3.5 w-3.5 text-accent" />
                       </div>
                       <div className="min-w-0 flex-1">
-                        <p className="truncate text-sm font-medium text-foreground">
-                          {d.name}
-                        </p>
+                        <p className="truncate text-sm font-medium text-foreground">{d.name}</p>
                         <p className="text-[11px] text-muted">
                           {d.count.toLocaleString()} {t("transactions_label")} &middot; {d.projectCount} {t("projects_label")}
                         </p>
@@ -439,7 +525,7 @@ export default function FilterPanel({
                 </div>
               )}
 
-              {/* Project matches */}
+              {/* Project suggestions */}
               {suggestions.projects.length > 0 && (
                 <div className="px-3 py-2">
                   <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-wider text-muted">
@@ -448,16 +534,14 @@ export default function FilterPanel({
                   {suggestions.projects.map((p) => (
                     <button
                       key={`${p.district}-${p.id}`}
-                      onClick={() => selectProject(p.name, p.district)}
+                      onClick={() => { selectProject(p.name, p.district); setSmartQuery(""); }}
                       className="flex w-full items-center gap-2.5 rounded-lg px-2 py-2 text-left transition-colors hover:bg-input-bg"
                     >
                       <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-accent/5">
                         <Building2 className="h-3.5 w-3.5 text-muted" />
                       </div>
                       <div className="min-w-0 flex-1">
-                        <p className="truncate text-sm font-medium text-foreground">
-                          {p.name}
-                        </p>
+                        <p className="truncate text-sm font-medium text-foreground">{p.name}</p>
                         <p className="text-[11px] text-muted">
                           {p.district} &middot; {p.count.toLocaleString()} {t("transactions_label")}
                         </p>
@@ -466,9 +550,20 @@ export default function FilterPanel({
                   ))}
                 </div>
               )}
+
+              {/* No matches hint */}
+              {smartPreview.matchedTerms.length === 0 && suggestions.districts.length === 0 && suggestions.projects.length === 0 && smartQuery.length >= 2 && (
+                <div className="px-4 py-4 text-center">
+                  <p className="text-xs text-muted">{t("smart_search_hint")}</p>
+                </div>
+              )}
             </div>
           )}
         </div>
+        <p className="mt-2 text-[10px] text-muted/70">
+          <Sparkles className="me-1 inline h-3 w-3 text-accent/50" />
+          {t("smart_search_examples")}
+        </p>
       </div>
 
       {/* Property Type Pills */}

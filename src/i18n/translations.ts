@@ -224,6 +224,12 @@ type TranslationStrings = {
   chat_thank_you: string;
   chat_thank_you_msg: string;
   chat_new_message: string;
+
+  // Smart Search
+  smart_search_detected: string;
+  smart_search_apply: string;
+  smart_search_hint: string;
+  smart_search_examples: string;
 };
 
 const en: TranslationStrings = {
@@ -438,6 +444,12 @@ const en: TranslationStrings = {
   chat_thank_you: "Thank You!",
   chat_thank_you_msg: "Your feedback has been received. We'll get back to you soon.",
   chat_new_message: "Send Another",
+
+  // Smart Search
+  smart_search_detected: "Smart search detected",
+  smart_search_apply: "Apply these filters",
+  smart_search_hint: "Try: villa ready yas island 3 bedroom",
+  smart_search_examples: "Try: 'villa ready yas island 3br' or 'apartment off-plan reem island'",
 };
 
 const ar: TranslationStrings = {
@@ -652,6 +664,12 @@ const ar: TranslationStrings = {
   chat_thank_you: "شكراً لك!",
   chat_thank_you_msg: "تم استلام ملاحظاتك. سنتواصل معك قريباً.",
   chat_new_message: "إرسال آخر",
+
+  // Smart Search
+  smart_search_detected: "تم اكتشاف البحث الذكي",
+  smart_search_apply: "تطبيق هذه الفلاتر",
+  smart_search_hint: "جرب: فيلا جاهز جزيرة ياس 3 غرف",
+  smart_search_examples: "جرب: 'فيلا جاهز جزيرة ياس 3 غرف' أو 'شقة على الخارطة جزيرة الريم'",
 };
 
 const ru: TranslationStrings = {
@@ -866,6 +884,12 @@ const ru: TranslationStrings = {
   chat_thank_you: "Спасибо!",
   chat_thank_you_msg: "Ваш отзыв получен. Мы свяжемся с вами в ближайшее время.",
   chat_new_message: "Отправить ещё",
+
+  // Smart Search
+  smart_search_detected: "Умный поиск обнаружил",
+  smart_search_apply: "Применить эти фильтры",
+  smart_search_hint: "Попробуйте: вилла готово яс айленд 3 спальни",
+  smart_search_examples: "Попробуйте: 'вилла готово яс айленд 3 спальни' или 'квартира строящиеся рим айленд'",
 };
 
 export const translations: Record<Locale, TranslationStrings> = { en, ar, ru };

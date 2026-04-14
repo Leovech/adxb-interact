@@ -1,7 +1,8 @@
 "use client";
 
-import { Mail, Phone, MapPin, ArrowRight, Building2 } from "lucide-react";
+import { Mail, Phone, MapPin, ArrowRight } from "lucide-react";
 import { useT } from "@/i18n/LanguageContext";
+import LogoMark from "./LogoMark";
 
 export default function ContactSection() {
   const t = useT();
@@ -12,8 +13,8 @@ export default function ContactSection() {
         {/* Left: Info */}
         <div className="p-6 lg:p-8">
           <div className="mb-4 flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-accent/15">
-              <Building2 className="h-5 w-5 text-accent" />
+            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-accent/10 overflow-hidden">
+              <LogoMark className="h-11 w-11 text-foreground" />
             </div>
             <div>
               <h2 className="text-lg font-bold text-foreground">
@@ -47,7 +48,7 @@ export default function ContactSection() {
             </a>
 
             <a
-              href="tel:+97126815588"
+              href="tel:+971585733939"
               className="flex items-center gap-3 rounded-lg px-3 py-2.5 transition-colors hover:bg-accent/10 group"
             >
               <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-accent/10 group-hover:bg-accent/20">
@@ -55,7 +56,7 @@ export default function ContactSection() {
               </div>
               <div>
                 <p className="text-[10px] font-semibold uppercase tracking-wider text-muted">{t("contact_phone")}</p>
-                <p className="text-sm font-medium text-foreground">+971 2 681 5588</p>
+                <p className="text-sm font-medium text-foreground">+971 58 573 3939</p>
               </div>
             </a>
 
@@ -97,7 +98,7 @@ export default function ContactSection() {
 
           <div className="mt-4 flex justify-center gap-4">
             <a
-              href="https://wa.me/97126815588"
+              href="https://wa.me/971585733939"
               target="_blank"
               rel="noopener noreferrer"
               className="flex h-10 w-10 items-center justify-center rounded-lg border border-card-border transition-colors hover:border-accent hover:bg-accent/10"
@@ -115,7 +116,7 @@ export default function ContactSection() {
               <Mail className="h-5 w-5 text-accent" />
             </a>
             <a
-              href="tel:+97126815588"
+              href="tel:+971585733939"
               className="flex h-10 w-10 items-center justify-center rounded-lg border border-card-border transition-colors hover:border-accent hover:bg-accent/10"
               title="Phone"
             >
