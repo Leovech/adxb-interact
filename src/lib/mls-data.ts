@@ -116,22 +116,33 @@ function generateAgentName(seed: () => number, platform: MLSPlatform): string {
   return `${first} ${last} · ${agency}`;
 }
 
-function buildListingUrl(
+export function buildListingUrl(
   platform: MLSPlatform,
   project: string,
   district: string,
-  bedrooms: number
+  bedrooms: number,
+  propertyType: string = "Apartment"
 ): string {
   // Deep-link to each platform's search results so the user can verify live
   // listings against our sample. URLs use the documented query params these
   // platforms expose on their search pages.
+  //
+  // Property Finder requires l=6 (Abu Dhabi emirate location ID) to scope
+  // results — without it, free-text searches bleed into Dubai listings.
+  // t=1 = residential apartments, t=35 = villas/houses.
+  const isVilla =
+    propertyType === "Villa" ||
+    propertyType === "Townhouse" ||
+    propertyType === "Duplex";
+
   if (platform === "propertyfinder") {
-    // Property Finder: c=1 sale, t=1 residential, q=free-text, bf/bt=bedrooms
-    const q = encodeURIComponent(`${project} ${district}`);
+    const typeParam = isVilla ? "&t=35" : "&t=1";
+    const q = encodeURIComponent(project);
     const bedParam = bedrooms > 0 ? `&bf=${bedrooms}&bt=${bedrooms}` : "";
-    return `https://www.propertyfinder.ae/en/search?c=1&t=1&q=${q}${bedParam}`;
+    return `https://www.propertyfinder.ae/en/search?l=6&c=1${typeParam}${bedParam}&q=${q}`;
   }
-  // Bayut: search_query=free-text, beds_min/beds_max=bedrooms
+  // Bayut: the /to-buy/property/abu-dhabi/ path already scopes to Abu Dhabi.
+  // search_query narrows by project+district, beds_min/max filter bedrooms.
   const q = encodeURIComponent(`${project} ${district}`);
   const bedParam =
     bedrooms > 0 ? `&beds_min=${bedrooms}&beds_max=${bedrooms}` : "";
@@ -257,7 +268,13 @@ export function buildListingGroups(transactions: Transaction[]): ListingGroup[] 
         askingPrice,
         askingRate,
         listingDate,
-        url: buildListingUrl(platform, g.project, g.district, g.bedrooms),
+        url: buildListingUrl(
+          platform,
+          g.project,
+          g.district,
+          g.bedrooms,
+          g.propertyType
+        ),
         agentName: generateAgentName(seed, platform),
       });
     }
