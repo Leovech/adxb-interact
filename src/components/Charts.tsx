@@ -16,7 +16,6 @@ import {
   PieChart,
   Pie,
   Cell,
-  Legend,
   AreaChart,
   Area,
 } from "recharts";
@@ -26,16 +25,16 @@ interface ChartsProps {
 }
 
 const COLORS = [
-  "#c4a04e",  // brass
-  "#d4b46a",  // light brass
-  "#a08535",  // dark brass
-  "#e3c882",  // pale gold
-  "#7cb87a",  // sage green
-  "#8b7340",  // antique brass
-  "#788182",  // cool gray
-  "#b0aca7",  // warm gray
-  "#5c6d2e",  // olive
-  "#c95d4a",  // terracotta
+  "#c4a04e",
+  "#d4b46a",
+  "#a08535",
+  "#e3c882",
+  "#7cb87a",
+  "#8b7340",
+  "#788182",
+  "#b0aca7",
+  "#5c6d2e",
+  "#c95d4a",
 ];
 
 const tooltipStyle = {
@@ -50,47 +49,47 @@ const tooltipStyle = {
 };
 
 export default function Charts({ data }: ChartsProps) {
-  // Monthly trend data
-  const monthlyTrend = useMemo(() => {
-    const byMonth: Record<
-      string,
-      { month: string; count: number; value: number; avgPPSF: number; prices: number[] }
-    > = {};
+  // Monthly transaction volume
+  const monthlyVolume = useMemo(() => {
+    const byMonth: Record<string, number> = {};
     data.forEach((tx) => {
-      const m = tx.date.substring(0, 7); // YYYY-MM
-      if (!byMonth[m]) {
-        byMonth[m] = { month: m, count: 0, value: 0, avgPPSF: 0, prices: [] };
-      }
-      byMonth[m].count++;
-      byMonth[m].value += tx.price;
-      if (tx.transactionType !== "Rental") {
-        byMonth[m].prices.push(tx.pricePerSqft);
+      const m = tx.date.substring(0, 7);
+      byMonth[m] = (byMonth[m] || 0) + 1;
+    });
+    return Object.entries(byMonth)
+      .map(([month, count]) => ({ month, count }))
+      .sort((a, b) => a.month.localeCompare(b.month));
+  }, [data]);
+
+  // Average rate per sqft trend
+  const avgRateTrend = useMemo(() => {
+    const byMonth: Record<string, { total: number; count: number }> = {};
+    data.forEach((tx) => {
+      const m = tx.date.substring(0, 7);
+      if (!byMonth[m]) byMonth[m] = { total: 0, count: 0 };
+      if (tx.ratePerSqft > 0) {
+        byMonth[m].total += tx.ratePerSqft;
+        byMonth[m].count++;
       }
     });
-    return Object.values(byMonth)
-      .map((m) => ({
-        month: m.month,
-        count: m.count,
-        value: m.value,
-        avgPPSF:
-          m.prices.length > 0
-            ? Math.round(m.prices.reduce((a, b) => a + b, 0) / m.prices.length)
-            : 0,
+    return Object.entries(byMonth)
+      .map(([month, { total, count }]) => ({
+        month,
+        avgRate: count > 0 ? Math.round(total / count) : 0,
       }))
       .sort((a, b) => a.month.localeCompare(b.month));
   }, [data]);
 
-  // Area breakdown
-  const areaBreakdown = useMemo(() => {
-    const byArea: Record<string, { area: string; count: number; value: number }> = {};
+  // Top 10 districts by transaction count
+  const districtBreakdown = useMemo(() => {
+    const byDistrict: Record<string, number> = {};
     data.forEach((tx) => {
-      if (!byArea[tx.area]) {
-        byArea[tx.area] = { area: tx.area, count: 0, value: 0 };
-      }
-      byArea[tx.area].count++;
-      byArea[tx.area].value += tx.price;
+      byDistrict[tx.district] = (byDistrict[tx.district] || 0) + 1;
     });
-    return Object.values(byArea).sort((a, b) => b.count - a.count);
+    return Object.entries(byDistrict)
+      .map(([district, count]) => ({ district, count }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 10);
   }, [data]);
 
   // Property type distribution
@@ -104,14 +103,27 @@ export default function Charts({ data }: ChartsProps) {
       .sort((a, b) => b.value - a.value);
   }, [data]);
 
-  // Transaction type split
-  const txTypeSplit = useMemo(() => {
-    const byType: Record<string, number> = {};
+  // Off-Plan vs Ready split
+  const statusSplit = useMemo(() => {
+    const counts: Record<string, number> = {};
     data.forEach((tx) => {
-      byType[tx.transactionType] = (byType[tx.transactionType] || 0) + 1;
+      const label =
+        tx.status === "Off-Plan"
+          ? "Off-Plan"
+          : tx.status === "Ready"
+            ? "Ready"
+            : "Other";
+      counts[label] = (counts[label] || 0) + 1;
     });
-    return Object.entries(byType).map(([name, value]) => ({ name, value }));
+    return Object.entries(counts)
+      .map(([name, value]) => ({ name, value }))
+      .sort((a, b) => b.value - a.value);
   }, [data]);
+
+  const formatMonth = (v: string) => {
+    const [y, m] = v.split("-");
+    return `${m}/${y.slice(2)}`;
+  };
 
   return (
     <div className="grid grid-cols-1 gap-4 lg:grid-cols-2" id="trends">
@@ -121,7 +133,7 @@ export default function Charts({ data }: ChartsProps) {
           Monthly Transaction Volume
         </h3>
         <ResponsiveContainer width="100%" height={280}>
-          <AreaChart data={monthlyTrend}>
+          <AreaChart data={monthlyVolume}>
             <defs>
               <linearGradient id="volumeGrad" x1="0" y1="0" x2="0" y2="1">
                 <stop offset="5%" stopColor="#c4a04e" stopOpacity={0.3} />
@@ -132,15 +144,15 @@ export default function Charts({ data }: ChartsProps) {
             <XAxis
               dataKey="month"
               tick={{ fontSize: 11, fill: "#b0aca7" }}
-              tickFormatter={(v) => {
-                const [y, m] = v.split("-");
-                return `${m}/${y.slice(2)}`;
-              }}
+              tickFormatter={formatMonth}
             />
             <YAxis tick={{ fontSize: 11, fill: "#b0aca7" }} />
             <Tooltip
               {...tooltipStyle}
-              formatter={(value) => [Number(value).toLocaleString(), "Transactions"]}
+              formatter={(value) => [
+                Number(value).toLocaleString(),
+                "Transactions",
+              ]}
             />
             <Area
               type="monotone"
@@ -153,21 +165,18 @@ export default function Charts({ data }: ChartsProps) {
         </ResponsiveContainer>
       </div>
 
-      {/* Average Price per Sqft Trend */}
+      {/* Average Rate per Sqft Trend */}
       <div className="rounded-xl border border-card-border bg-card-bg p-5">
         <h3 className="mb-4 text-sm font-semibold text-foreground">
-          Avg Price per Sqft (AED)
+          Avg Rate per Sqft Trend
         </h3>
         <ResponsiveContainer width="100%" height={280}>
-          <LineChart data={monthlyTrend}>
+          <LineChart data={avgRateTrend}>
             <CartesianGrid strokeDasharray="3 3" stroke="#374144" />
             <XAxis
               dataKey="month"
               tick={{ fontSize: 11, fill: "#b0aca7" }}
-              tickFormatter={(v) => {
-                const [y, m] = v.split("-");
-                return `${m}/${y.slice(2)}`;
-              }}
+              tickFormatter={formatMonth}
             />
             <YAxis tick={{ fontSize: 11, fill: "#b0aca7" }} />
             <Tooltip
@@ -179,7 +188,7 @@ export default function Charts({ data }: ChartsProps) {
             />
             <Line
               type="monotone"
-              dataKey="avgPPSF"
+              dataKey="avgRate"
               stroke="#d4b46a"
               strokeWidth={2}
               dot={false}
@@ -188,27 +197,30 @@ export default function Charts({ data }: ChartsProps) {
         </ResponsiveContainer>
       </div>
 
-      {/* Area Breakdown */}
+      {/* Transactions by District */}
       <div className="rounded-xl border border-card-border bg-card-bg p-5">
         <h3 className="mb-4 text-sm font-semibold text-foreground">
-          Transactions by Area
+          Transactions by District
         </h3>
         <ResponsiveContainer width="100%" height={280}>
-          <BarChart data={areaBreakdown.slice(0, 10)} layout="vertical">
+          <BarChart data={districtBreakdown} layout="vertical">
             <CartesianGrid strokeDasharray="3 3" stroke="#374144" />
             <XAxis type="number" tick={{ fontSize: 11, fill: "#b0aca7" }} />
             <YAxis
               type="category"
-              dataKey="area"
+              dataKey="district"
               width={120}
               tick={{ fontSize: 11, fill: "#b0aca7" }}
             />
             <Tooltip
               {...tooltipStyle}
-              formatter={(value) => [Number(value).toLocaleString(), "Transactions"]}
+              formatter={(value) => [
+                Number(value).toLocaleString(),
+                "Transactions",
+              ]}
             />
             <Bar dataKey="count" radius={[0, 4, 4, 0]}>
-              {areaBreakdown.slice(0, 10).map((_, i) => (
+              {districtBreakdown.map((_, i) => (
                 <Cell key={i} fill={COLORS[i % COLORS.length]} />
               ))}
             </Bar>
@@ -216,7 +228,7 @@ export default function Charts({ data }: ChartsProps) {
         </ResponsiveContainer>
       </div>
 
-      {/* Property Type & Transaction Type */}
+      {/* Property Types + Status Split */}
       <div className="grid grid-cols-2 gap-4">
         <div className="rounded-xl border border-card-border bg-card-bg p-5">
           <h3 className="mb-2 text-sm font-semibold text-foreground">
@@ -243,7 +255,10 @@ export default function Charts({ data }: ChartsProps) {
               </Pie>
               <Tooltip
                 {...tooltipStyle}
-                formatter={(value) => [Number(value).toLocaleString(), "Count"]}
+                formatter={(value) => [
+                  Number(value).toLocaleString(),
+                  "Count",
+                ]}
               />
             </PieChart>
           </ResponsiveContainer>
@@ -251,12 +266,12 @@ export default function Charts({ data }: ChartsProps) {
 
         <div className="rounded-xl border border-card-border bg-card-bg p-5">
           <h3 className="mb-2 text-sm font-semibold text-foreground">
-            Deal Types
+            Off-Plan vs Ready
           </h3>
           <ResponsiveContainer width="100%" height={250}>
             <PieChart>
               <Pie
-                data={txTypeSplit}
+                data={statusSplit}
                 cx="50%"
                 cy="50%"
                 innerRadius={40}
@@ -268,13 +283,25 @@ export default function Charts({ data }: ChartsProps) {
                 labelLine={false}
                 style={{ fontSize: 10 }}
               >
-                {txTypeSplit.map((entry, i) => (
-                  <Cell key={i} fill={entry.name === "Sale" ? "#c4a04e" : "#788182"} />
+                {statusSplit.map((entry, i) => (
+                  <Cell
+                    key={i}
+                    fill={
+                      entry.name === "Off-Plan"
+                        ? "#c4a04e"
+                        : entry.name === "Ready"
+                          ? "#7cb87a"
+                          : "#788182"
+                    }
+                  />
                 ))}
               </Pie>
               <Tooltip
                 {...tooltipStyle}
-                formatter={(value) => [Number(value).toLocaleString(), "Count"]}
+                formatter={(value) => [
+                  Number(value).toLocaleString(),
+                  "Count",
+                ]}
               />
             </PieChart>
           </ResponsiveContainer>

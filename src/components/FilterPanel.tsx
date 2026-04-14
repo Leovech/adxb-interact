@@ -1,25 +1,23 @@
 "use client";
 
-import {
-  areas,
-  getProjectsForArea,
-  getBuildingsForProject,
-} from "@/data/abu-dhabi";
+import { getProjectsForDistrict, Hierarchy } from "@/data/abu-dhabi";
 import { FilterState, DatePreset, defaultFilters } from "@/lib/filters";
-import { RotateCcw, Calendar, Search } from "lucide-react";
+import { RotateCcw, Calendar, Search, ChevronDown } from "lucide-react";
 import { useState, useMemo } from "react";
 
 interface FilterPanelProps {
   filters: FilterState;
   onChange: (filters: FilterState) => void;
   transactionCount: number;
+  hierarchy: Hierarchy;
 }
 
 const datePresets: { value: DatePreset; label: string }[] = [
+  { value: "all_time", label: "All Time" },
   { value: "today", label: "Today" },
-  { value: "7d", label: "7 Days" },
-  { value: "30d", label: "30 Days" },
-  { value: "90d", label: "90 Days" },
+  { value: "7d", label: "7D" },
+  { value: "30d", label: "30D" },
+  { value: "90d", label: "90D" },
   { value: "this_week", label: "This Week" },
   { value: "this_month", label: "This Month" },
   { value: "this_quarter", label: "Q" },
@@ -33,69 +31,46 @@ const datePresets: { value: DatePreset; label: string }[] = [
 
 const propertyTypeOptions = [
   { value: "", label: "All" },
-  { value: "Apartment", label: "Unit" },
+  { value: "Apartment", label: "Apartment" },
   { value: "Villa", label: "Villa" },
   { value: "Townhouse", label: "Townhouse" },
-  { value: "Penthouse", label: "Penthouse" },
+  { value: "Duplex", label: "Duplex" },
   { value: "Land", label: "Land" },
+  { value: "Penthouse", label: "Penthouse" },
   { value: "Office", label: "Office" },
   { value: "Retail", label: "Retail" },
-];
-
-const dealTypeOptions = [
-  { value: "", label: "All" },
-  { value: "Sale", label: "Sale" },
-  { value: "Rental", label: "Rent" },
+  { value: "Other", label: "Other" },
 ];
 
 const statusOptions = [
   { value: "", label: "All" },
-  { value: "Ready", label: "Ready" },
   { value: "Off-Plan", label: "Off-Plan" },
+  { value: "Ready", label: "Ready" },
 ];
 
-const paymentOptions = [
+const sequenceOptions = [
   { value: "", label: "All" },
-  { value: "Cash", label: "Cash" },
-  { value: "Mortgage", label: "Mortgage" },
+  { value: "Primary", label: "Primary (First Sale)" },
+  { value: "Secondary", label: "Secondary (Resale)" },
+];
+
+const assetClassOptions = [
+  { value: "", label: "All" },
+  { value: "residential", label: "Residential" },
+  { value: "commercial", label: "Commercial" },
+  { value: "agricultural", label: "Agricultural" },
+  { value: "other", label: "Other" },
 ];
 
 const bedroomOptions = [
   { value: "", label: "All" },
   { value: "0", label: "Studio" },
-  { value: "1", label: "1 BR" },
-  { value: "2", label: "2 BR" },
-  { value: "3", label: "3 BR" },
-  { value: "4", label: "4 BR" },
-  { value: "5", label: "5 BR" },
-  { value: "6+", label: "6+ BR" },
-];
-
-const bathroomOptions = [
-  { value: "", label: "All" },
-  { value: "1", label: "1" },
-  { value: "2", label: "2" },
-  { value: "3", label: "3" },
-  { value: "4+", label: "4+" },
-];
-
-const maidsRoomOptions = [
-  { value: "", label: "All" },
-  { value: "yes", label: "Yes" },
-  { value: "no", label: "No" },
-];
-
-const developers = [
-  "Aldar Properties",
-  "Bloom Properties",
-  "Mubadala",
-  "IMKAN Properties",
-  "Reportage Properties",
-  "Al Barakah International Investment",
-  "Tamouh Investments",
-  "Reem Developers",
-  "Q Properties",
-  "Dar Al Arkan",
+  { value: "1", label: "1BR" },
+  { value: "2", label: "2BR" },
+  { value: "3", label: "3BR" },
+  { value: "4", label: "4BR" },
+  { value: "5", label: "5BR" },
+  { value: "6+", label: "6+BR" },
 ];
 
 function PillGroup({
@@ -137,26 +112,29 @@ export default function FilterPanel({
   filters,
   onChange,
   transactionCount,
+  hierarchy,
 }: FilterPanelProps) {
   const [showRanges, setShowRanges] = useState(false);
 
-  const projects = useMemo(
-    () => (filters.areaId ? getProjectsForArea(filters.areaId) : []),
-    [filters.areaId]
+  const sortedDistricts = useMemo(
+    () => [...hierarchy.districts].sort((a, b) => b.count - a.count),
+    [hierarchy.districts]
   );
-  const buildings = useMemo(
-    () => (filters.projectId ? getBuildingsForProject(filters.projectId) : []),
-    [filters.projectId]
+
+  const projectsForDistrict = useMemo(
+    () =>
+      filters.district
+        ? getProjectsForDistrict(hierarchy, filters.district).sort(
+            (a, b) => b.count - a.count
+          )
+        : [],
+    [hierarchy, filters.district]
   );
 
   const update = (partial: Partial<FilterState>) => {
     const next = { ...filters, ...partial };
-    if (partial.areaId !== undefined) {
-      next.projectId = "";
-      next.buildingId = "";
-    }
-    if (partial.projectId !== undefined) {
-      next.buildingId = "";
+    if (partial.district !== undefined) {
+      next.project = "";
     }
     onChange(next);
   };
@@ -207,7 +185,7 @@ export default function FilterPanel({
           <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted" />
           <input
             type="text"
-            placeholder="Search area, project, building, developer..."
+            placeholder="Search district, project, community..."
             value={filters.searchQuery}
             onChange={(e) => update({ searchQuery: e.target.value })}
             className="w-full rounded-lg border border-input-border bg-input-bg py-2.5 pl-10 pr-3 text-sm text-foreground outline-none transition-colors placeholder:text-muted/60 focus:border-accent focus:ring-1 focus:ring-accent/30"
@@ -225,14 +203,8 @@ export default function FilterPanel({
         />
       </div>
 
-      {/* Deal Type + Status + Payment - side by side pills */}
+      {/* Status + Sale Type + Asset Class */}
       <div className="grid grid-cols-1 gap-4 border-b border-card-border px-5 py-4 sm:grid-cols-3">
-        <PillGroup
-          label="Deal Type"
-          options={dealTypeOptions}
-          value={filters.transactionType}
-          onChange={(v) => update({ transactionType: v })}
-        />
         <PillGroup
           label="Status"
           options={statusOptions}
@@ -240,76 +212,59 @@ export default function FilterPanel({
           onChange={(v) => update({ status: v })}
         />
         <PillGroup
-          label="Payment"
-          options={paymentOptions}
-          value={filters.paymentMethod}
-          onChange={(v) => update({ paymentMethod: v })}
+          label="Sale Type"
+          options={sequenceOptions}
+          value={filters.sequence}
+          onChange={(v) => update({ sequence: v })}
+        />
+        <PillGroup
+          label="Asset Class"
+          options={assetClassOptions}
+          value={filters.assetClass}
+          onChange={(v) => update({ assetClass: v })}
         />
       </div>
 
-      {/* Bedrooms + Bathrooms + Maid's Room pills */}
-      <div className="grid grid-cols-1 gap-4 border-b border-card-border px-5 py-4 sm:grid-cols-3">
+      {/* Bedrooms */}
+      <div className="border-b border-card-border px-5 py-4">
         <PillGroup
           label="Bedrooms"
           options={bedroomOptions}
           value={filters.bedrooms}
           onChange={(v) => update({ bedrooms: v })}
         />
-        <PillGroup
-          label="Bathrooms"
-          options={bathroomOptions}
-          value={filters.bathrooms}
-          onChange={(v) => update({ bathrooms: v })}
-        />
-        <PillGroup
-          label="Maid's Room"
-          options={maidsRoomOptions}
-          value={filters.maidsRoom}
-          onChange={(v) => update({ maidsRoom: v })}
-        />
       </div>
 
-      {/* Location: Area -> Project -> Building */}
+      {/* Location: District -> Project */}
       <div className="border-b border-card-border px-5 py-4">
         <label className="mb-2 block text-[11px] font-semibold uppercase tracking-wider text-muted">
           Location
         </label>
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <select
-            value={filters.areaId}
-            onChange={(e) => update({ areaId: e.target.value })}
+            value={filters.district}
+            onChange={(e) => update({ district: e.target.value })}
             className={selectClass}
           >
-            <option value="">All Areas</option>
-            {areas.map((a) => (
-              <option key={a.id} value={a.id}>
-                {a.name}
+            <option value="">All Districts</option>
+            {sortedDistricts.map((d) => (
+              <option key={d.id} value={d.name}>
+                {d.name} ({d.count.toLocaleString()})
               </option>
             ))}
           </select>
           <select
-            value={filters.projectId}
-            onChange={(e) => update({ projectId: e.target.value })}
+            value={filters.project}
+            onChange={(e) => update({ project: e.target.value })}
             className={selectClass}
-            disabled={!filters.areaId}
+            disabled={!filters.district}
           >
-            <option value="">{filters.areaId ? "All Projects" : "Select Area First"}</option>
-            {projects.map((p) => (
-              <option key={p.id} value={p.id}>
-                {p.name}
-              </option>
-            ))}
-          </select>
-          <select
-            value={filters.buildingId}
-            onChange={(e) => update({ buildingId: e.target.value })}
-            className={selectClass}
-            disabled={!filters.projectId}
-          >
-            <option value="">{filters.projectId ? "All Buildings" : "Select Project First"}</option>
-            {buildings.map((b) => (
-              <option key={b.id} value={b.id}>
-                {b.name}
+            <option value="">
+              {filters.district ? "All Projects" : "Select District First"}
+            </option>
+            {projectsForDistrict.map((p) => (
+              <option key={p.id} value={p.name}>
+                {p.name} ({p.count.toLocaleString()})
               </option>
             ))}
           </select>
@@ -361,16 +316,19 @@ export default function FilterPanel({
         )}
       </div>
 
-      {/* Price, Size & Developer - expandable */}
+      {/* Price, Size & Rate - expandable */}
       <div className="px-5 py-4">
         <button
           onClick={() => setShowRanges(!showRanges)}
-          className="mb-3 text-[11px] font-semibold uppercase tracking-wider text-accent hover:underline"
+          className="mb-3 flex items-center gap-1 text-[11px] font-semibold uppercase tracking-wider text-accent hover:underline"
         >
-          {showRanges ? "- Hide" : "+ Show"} Price, Size & Developer
+          <ChevronDown
+            className={`h-3 w-3 transition-transform ${showRanges ? "rotate-180" : ""}`}
+          />
+          {showRanges ? "Hide" : "Show"} Price, Size & Rate Filters
         </button>
         {showRanges && (
-          <div className="animate-fade-in grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="animate-fade-in grid grid-cols-1 gap-3 sm:grid-cols-3">
             {/* Price Range */}
             <div>
               <label className="mb-1.5 block text-xs font-medium text-muted">
@@ -393,7 +351,7 @@ export default function FilterPanel({
                 />
               </div>
             </div>
-            {/* Size */}
+            {/* Size Range */}
             <div>
               <label className="mb-1.5 block text-xs font-medium text-muted">
                 Size (sqft)
@@ -415,23 +373,27 @@ export default function FilterPanel({
                 />
               </div>
             </div>
-            {/* Developer */}
+            {/* Rate Range */}
             <div>
               <label className="mb-1.5 block text-xs font-medium text-muted">
-                Developer
+                Rate (AED/sqft)
               </label>
-              <select
-                value={filters.developer}
-                onChange={(e) => update({ developer: e.target.value })}
-                className={selectClass}
-              >
-                <option value="">All Developers</option>
-                {developers.map((d) => (
-                  <option key={d} value={d}>
-                    {d}
-                  </option>
-                ))}
-              </select>
+              <div className="flex gap-2">
+                <input
+                  type="number"
+                  placeholder="Min"
+                  value={filters.rateMin}
+                  onChange={(e) => update({ rateMin: e.target.value })}
+                  className={inputClass}
+                />
+                <input
+                  type="number"
+                  placeholder="Max"
+                  value={filters.rateMax}
+                  onChange={(e) => update({ rateMax: e.target.value })}
+                  className={inputClass}
+                />
+              </div>
             </div>
           </div>
         )}

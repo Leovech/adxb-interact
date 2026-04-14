@@ -1,7 +1,7 @@
 "use client";
 
 import { Transaction } from "@/data/abu-dhabi";
-import { formatAED } from "@/lib/filters";
+import { formatAED, formatNumber } from "@/lib/filters";
 import {
   ArrowUpDown,
   ArrowUp,
@@ -17,17 +17,36 @@ interface TransactionTableProps {
 
 type SortField =
   | "date"
-  | "area"
+  | "district"
   | "project"
-  | "building"
-  | "propertyType"
-  | "bedrooms"
-  | "size"
+  | "sizeSqft"
   | "price"
-  | "pricePerSqft"
-  | "transactionType";
+  | "ratePerSqft";
 
 const PAGE_SIZE = 25;
+
+const TYPE_COLORS: Record<string, string> = {
+  Apartment: "bg-accent/10 text-accent",
+  Villa: "bg-positive/10 text-positive",
+  Townhouse: "bg-blue-500/10 text-blue-400",
+  Penthouse: "bg-purple-500/10 text-purple-400",
+  Land: "bg-orange-500/10 text-orange-400",
+  Office: "bg-cyan-500/10 text-cyan-400",
+  Retail: "bg-rose-500/10 text-rose-400",
+  Warehouse: "bg-amber-500/10 text-amber-400",
+};
+
+const DEFAULT_TYPE_COLOR = "bg-input-bg text-muted";
+
+function getTypeColor(propertyType: string): string {
+  return TYPE_COLORS[propertyType] || DEFAULT_TYPE_COLOR;
+}
+
+function formatBedrooms(beds: number): string {
+  if (beds === 0) return "S";
+  if (beds === -1) return "-";
+  return String(beds);
+}
 
 export default function TransactionTable({ data }: TransactionTableProps) {
   const [sortField, setSortField] = useState<SortField>("date");
@@ -37,12 +56,25 @@ export default function TransactionTable({ data }: TransactionTableProps) {
   const sorted = useMemo(() => {
     return [...data].sort((a, b) => {
       let cmp = 0;
-      const av = a[sortField];
-      const bv = b[sortField];
-      if (typeof av === "string" && typeof bv === "string") {
-        cmp = av.localeCompare(bv);
-      } else if (typeof av === "number" && typeof bv === "number") {
-        cmp = av - bv;
+      switch (sortField) {
+        case "date":
+          cmp = a.date.localeCompare(b.date);
+          break;
+        case "district":
+          cmp = a.district.localeCompare(b.district);
+          break;
+        case "project":
+          cmp = a.project.localeCompare(b.project);
+          break;
+        case "sizeSqft":
+          cmp = a.sizeSqft - b.sizeSqft;
+          break;
+        case "price":
+          cmp = a.price - b.price;
+          break;
+        case "ratePerSqft":
+          cmp = a.ratePerSqft - b.ratePerSqft;
+          break;
       }
       return sortDir === "asc" ? cmp : -cmp;
     });
@@ -74,8 +106,36 @@ export default function TransactionTable({ data }: TransactionTableProps) {
   const colClass =
     "cursor-pointer select-none whitespace-nowrap px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted hover:text-accent transition-colors";
 
+  const staticColClass =
+    "whitespace-nowrap px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted";
+
+  // Page number range (show 5 at a time)
+  const pageNumbers = useMemo(() => {
+    const pages: number[] = [];
+    const total = Math.min(5, totalPages);
+    let start: number;
+
+    if (totalPages <= 5) {
+      start = 0;
+    } else if (page < 3) {
+      start = 0;
+    } else if (page > totalPages - 4) {
+      start = totalPages - 5;
+    } else {
+      start = page - 2;
+    }
+
+    for (let i = 0; i < total; i++) {
+      pages.push(start + i);
+    }
+    return pages;
+  }, [page, totalPages]);
+
   return (
-    <div className="rounded-xl border border-card-border bg-card-bg" id="transactions">
+    <div
+      className="rounded-xl border border-card-border bg-card-bg"
+      id="transactions"
+    >
       <div className="border-b border-card-border px-5 py-4">
         <h2 className="text-sm font-semibold text-foreground">
           Transaction Details
@@ -86,106 +146,100 @@ export default function TransactionTable({ data }: TransactionTableProps) {
       </div>
 
       <div className="overflow-x-auto">
-        <table className="w-full min-w-[1100px]">
+        <table className="w-full min-w-[1200px]">
           <thead>
             <tr className="border-b border-card-border bg-input-bg/50">
               <th className={colClass} onClick={() => handleSort("date")}>
                 Date
                 <SortIcon field="date" />
               </th>
-              <th className={colClass} onClick={() => handleSort("area")}>
-                Area
-                <SortIcon field="area" />
+              <th className={colClass} onClick={() => handleSort("district")}>
+                District
+                <SortIcon field="district" />
               </th>
               <th className={colClass} onClick={() => handleSort("project")}>
                 Project
                 <SortIcon field="project" />
               </th>
-              <th className={colClass} onClick={() => handleSort("building")}>
-                Building
-                <SortIcon field="building" />
-              </th>
-              <th
-                className={colClass}
-                onClick={() => handleSort("propertyType")}
-              >
-                Type
-                <SortIcon field="propertyType" />
-              </th>
-              <th className={colClass} onClick={() => handleSort("bedrooms")}>
-                Beds
-                <SortIcon field="bedrooms" />
-              </th>
-              <th className={colClass} onClick={() => handleSort("size")}>
-                Size (sqft)
-                <SortIcon field="size" />
+              <th className={staticColClass}>Type</th>
+              <th className={staticColClass}>Beds</th>
+              <th className={colClass} onClick={() => handleSort("sizeSqft")}>
+                Size sqft
+                <SortIcon field="sizeSqft" />
               </th>
               <th className={colClass} onClick={() => handleSort("price")}>
-                Price
+                Price AED
                 <SortIcon field="price" />
               </th>
               <th
                 className={colClass}
-                onClick={() => handleSort("pricePerSqft")}
+                onClick={() => handleSort("ratePerSqft")}
               >
-                AED/sqft
-                <SortIcon field="pricePerSqft" />
+                Rate/sqft
+                <SortIcon field="ratePerSqft" />
               </th>
-              <th
-                className={colClass}
-                onClick={() => handleSort("transactionType")}
-              >
-                Deal
-                <SortIcon field="transactionType" />
-              </th>
+              <th className={staticColClass}>Status</th>
+              <th className={staticColClass}>Sale</th>
             </tr>
           </thead>
           <tbody>
             {paged.map((tx) => (
               <tr
                 key={tx.id}
-                className="border-b border-card-border/50 transition-colors hover:bg-input-bg/30"
+                className="border-b border-card-border/50 transition-colors hover:bg-input-bg"
               >
                 <td className="whitespace-nowrap px-4 py-3 text-sm text-foreground">
                   {tx.date}
                 </td>
                 <td className="whitespace-nowrap px-4 py-3 text-sm font-medium text-accent">
-                  {tx.area}
+                  {tx.district}
                 </td>
-                <td className="whitespace-nowrap px-4 py-3 text-sm text-foreground">
+                <td className="max-w-[200px] truncate px-4 py-3 text-sm text-foreground">
                   {tx.project}
                 </td>
-                <td className="whitespace-nowrap px-4 py-3 text-sm text-muted">
-                  {tx.building}
-                </td>
                 <td className="whitespace-nowrap px-4 py-3">
-                  <span className="rounded-full bg-accent/10 px-2 py-0.5 text-xs font-medium text-accent">
+                  <span
+                    className={`rounded-full px-2 py-0.5 text-xs font-medium ${getTypeColor(tx.propertyType)}`}
+                  >
                     {tx.propertyType}
                   </span>
                 </td>
                 <td className="whitespace-nowrap px-4 py-3 text-center text-sm text-foreground">
-                  {tx.bedrooms === 0 ? "S" : tx.bedrooms}
+                  {formatBedrooms(tx.bedrooms)}
                 </td>
                 <td className="whitespace-nowrap px-4 py-3 text-right text-sm text-foreground">
-                  {tx.size.toLocaleString()}
+                  {formatNumber(tx.sizeSqft)}
                 </td>
                 <td className="whitespace-nowrap px-4 py-3 text-right text-sm font-semibold text-foreground">
                   {formatAED(tx.price)}
                 </td>
                 <td className="whitespace-nowrap px-4 py-3 text-right text-sm text-muted">
-                  {tx.pricePerSqft.toLocaleString()}
+                  {formatNumber(tx.ratePerSqft)}
                 </td>
                 <td className="whitespace-nowrap px-4 py-3">
                   <span
                     className={`rounded-full px-2 py-0.5 text-xs font-medium ${
-                      tx.transactionType === "Sale"
-                        ? "bg-positive/10 text-positive"
-                        : tx.transactionType === "Rental"
-                          ? "bg-blue-500/10 text-blue-400"
-                          : "bg-orange-500/10 text-orange-400"
+                      tx.status === "Off-Plan"
+                        ? "bg-accent/10 text-accent"
+                        : tx.status === "Ready"
+                          ? "bg-positive/10 text-positive"
+                          : "bg-input-bg text-muted"
                     }`}
                   >
-                    {tx.transactionType}
+                    {tx.status}
+                  </span>
+                </td>
+                <td className="whitespace-nowrap px-4 py-3">
+                  <span
+                    className={`rounded-full px-2 py-0.5 text-xs font-medium ${
+                      tx.sequence === "Primary"
+                        ? "bg-accent/10 text-accent"
+                        : tx.sequence === "Secondary"
+                          ? "bg-input-bg text-muted"
+                          : "bg-input-bg text-muted"
+                    }`}
+                  >
+                    {tx.sequence}
                   </span>
                 </td>
               </tr>
@@ -207,32 +261,19 @@ export default function TransactionTable({ data }: TransactionTableProps) {
           >
             <ChevronLeft className="h-4 w-4" />
           </button>
-          {/* Page numbers */}
-          {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-            let pageNum: number;
-            if (totalPages <= 5) {
-              pageNum = i;
-            } else if (page < 3) {
-              pageNum = i;
-            } else if (page > totalPages - 4) {
-              pageNum = totalPages - 5 + i;
-            } else {
-              pageNum = page - 2 + i;
-            }
-            return (
-              <button
-                key={pageNum}
-                onClick={() => setPage(pageNum)}
-                className={`min-w-[36px] rounded-lg border px-2 py-2 text-xs font-medium transition-colors ${
-                  page === pageNum
-                    ? "border-accent bg-accent text-background"
-                    : "border-input-border text-muted hover:bg-input-bg"
-                }`}
-              >
-                {pageNum + 1}
-              </button>
-            );
-          })}
+          {pageNumbers.map((pageNum) => (
+            <button
+              key={pageNum}
+              onClick={() => setPage(pageNum)}
+              className={`min-w-[36px] rounded-lg border px-2 py-2 text-xs font-medium transition-colors ${
+                page === pageNum
+                  ? "border-accent bg-accent text-background"
+                  : "border-input-border text-muted hover:bg-input-bg"
+              }`}
+            >
+              {pageNum + 1}
+            </button>
+          ))}
           <button
             onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
             disabled={page >= totalPages - 1}

@@ -1,9 +1,8 @@
 "use client";
 
 import { Transaction } from "@/data/abu-dhabi";
-import { formatAED, formatNumber } from "@/lib/filters";
-import { FilterState } from "@/lib/filters";
-import { BarChart3, TrendingUp, Ruler, MapPin } from "lucide-react";
+import { formatAED, formatNumber, FilterState } from "@/lib/filters";
+import { BarChart3, TrendingUp, Ruler, Repeat } from "lucide-react";
 
 interface MedianStatsProps {
   data: Transaction[];
@@ -18,39 +17,43 @@ function median(values: number[]): number {
 }
 
 export default function MedianStats({ data, filters }: MedianStatsProps) {
-  const sales = data.filter((t) => t.transactionType === "Sale");
-  const rentals = data.filter((t) => t.transactionType === "Rental");
-
   if (data.length === 0) return null;
 
-  const locationLabel = filters.buildingId
-    ? data[0]?.building
-    : filters.projectId
-      ? data[0]?.project
-      : filters.areaId
-        ? data[0]?.area
-        : "All Abu Dhabi";
+  const locationLabel = filters.project
+    ? filters.project
+    : filters.district
+    ? filters.district
+    : "All Abu Dhabi";
 
-  const medianSalePrice = median(sales.map((t) => t.price));
-  const medianPPSF = median(sales.map((t) => t.pricePerSqft));
-  const medianSize = median(sales.map((t) => t.size));
-  const medianRent = median(rentals.map((t) => t.price));
-  const avgPPSF =
-    sales.length > 0
-      ? Math.round(sales.reduce((s, t) => s + t.pricePerSqft, 0) / sales.length)
+  const medianSalePrice = median(data.map((t) => t.price));
+  const ratesWithValue = data.filter((t) => t.ratePerSqft > 0);
+  const medianRate = median(ratesWithValue.map((t) => t.ratePerSqft));
+  const avgRate =
+    ratesWithValue.length > 0
+      ? Math.round(
+          ratesWithValue.reduce((s, t) => s + t.ratePerSqft, 0) /
+            ratesWithValue.length
+        )
       : 0;
+  const sizesWithValue = data.filter((t) => t.sizeSqft > 0);
+  const medianSize = median(sizesWithValue.map((t) => t.sizeSqft));
+
+  const primaryCount = data.filter((t) => t.sequence === "Primary").length;
+  const primaryPct =
+    data.length > 0 ? Math.round((primaryCount / data.length) * 100) : 0;
+  const secondaryPct = data.length > 0 ? 100 - primaryPct : 0;
 
   const stats = [
     {
       label: "Median Sale Price",
       value: medianSalePrice > 0 ? formatAED(medianSalePrice) : "N/A",
-      sub: `${formatNumber(sales.length)} sales`,
+      sub: `${formatNumber(data.length)} transactions`,
       icon: BarChart3,
     },
     {
       label: "Median AED/sqft",
-      value: medianPPSF > 0 ? `AED ${formatNumber(medianPPSF)}` : "N/A",
-      sub: `Avg: AED ${formatNumber(avgPPSF)}`,
+      value: medianRate > 0 ? `AED ${formatNumber(medianRate)}` : "N/A",
+      sub: `Avg: AED ${formatNumber(avgRate)}`,
       icon: TrendingUp,
     },
     {
@@ -60,10 +63,10 @@ export default function MedianStats({ data, filters }: MedianStatsProps) {
       icon: Ruler,
     },
     {
-      label: "Median Rent",
-      value: medianRent > 0 ? `${formatAED(medianRent)}/yr` : "N/A",
-      sub: `${formatNumber(rentals.length)} rentals`,
-      icon: MapPin,
+      label: "Primary vs Secondary",
+      value: `${primaryPct}% Primary`,
+      sub: `${formatNumber(primaryCount)} first sales, ${secondaryPct}% resale`,
+      icon: Repeat,
     },
   ];
 
@@ -87,7 +90,9 @@ export default function MedianStats({ data, filters }: MedianStatsProps) {
               <p className="text-[11px] font-medium uppercase tracking-wider text-muted">
                 {s.label}
               </p>
-              <p className="mt-0.5 text-lg font-bold text-foreground">{s.value}</p>
+              <p className="mt-0.5 text-lg font-bold text-foreground">
+                {s.value}
+              </p>
               <p className="text-xs text-muted">{s.sub}</p>
             </div>
           </div>

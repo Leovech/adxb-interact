@@ -1,101 +1,233 @@
 "use client";
 
-import { Transaction, getRepeatSaleUnits } from "@/data/abu-dhabi";
-import { formatAED } from "@/lib/filters";
+import { Transaction } from "@/data/abu-dhabi";
+import { formatAED, formatNumber } from "@/lib/filters";
 import { useMemo, useState } from "react";
-import { TrendingUp, TrendingDown, History, ChevronDown, ChevronUp } from "lucide-react";
+import {
+  TrendingUp,
+  TrendingDown,
+  ChevronDown,
+  ChevronUp,
+  Building2,
+} from "lucide-react";
 
 interface PriceHistoryProps {
   data: Transaction[];
 }
 
+interface QuarterData {
+  label: string;
+  sortKey: string;
+  count: number;
+  avgPrice: number;
+  avgRate: number;
+  changePct: number | null;
+}
+
+interface ProjectTrend {
+  projectId: string;
+  project: string;
+  district: string;
+  totalCount: number;
+  latestAvgRate: number;
+  quarters: QuarterData[];
+  trendPositive: boolean;
+}
+
+function getQuarterLabel(date: string): { label: string; sortKey: string } {
+  const d = new Date(date);
+  const year = d.getFullYear();
+  const q = Math.floor(d.getMonth() / 3) + 1;
+  return { label: `Q${q} ${year}`, sortKey: `${year}-Q${q}` };
+}
+
 export default function PriceHistory({ data }: PriceHistoryProps) {
-  const [expandedUnit, setExpandedUnit] = useState<string | null>(null);
+  const [expandedProject, setExpandedProject] = useState<string | null>(null);
   const [showAll, setShowAll] = useState(false);
 
-  const repeatUnits = useMemo(() => getRepeatSaleUnits(data), [data]);
+  const projectTrends = useMemo(() => {
+    if (data.length === 0) return [];
 
-  if (repeatUnits.length === 0) {
+    // Group transactions by project
+    const projectMap: Record<
+      string,
+      {
+        project: string;
+        district: string;
+        transactions: Transaction[];
+      }
+    > = {};
+
+    data.forEach((tx) => {
+      if (!tx.project || !tx.ratePerSqft || tx.ratePerSqft <= 0) return;
+      const key = tx.projectId || tx.project;
+      if (!projectMap[key]) {
+        projectMap[key] = {
+          project: tx.project,
+          district: tx.district,
+          transactions: [],
+        };
+      }
+      projectMap[key].transactions.push(tx);
+    });
+
+    // Build trend data for each project
+    const trends: ProjectTrend[] = [];
+
+    Object.entries(projectMap).forEach(([projectId, info]) => {
+      if (info.transactions.length < 3) return;
+
+      // Group by quarter
+      const quarterMap: Record<
+        string,
+        { label: string; sortKey: string; prices: number[]; rates: number[] }
+      > = {};
+
+      info.transactions.forEach((tx) => {
+        const { label, sortKey } = getQuarterLabel(tx.date);
+        if (!quarterMap[sortKey]) {
+          quarterMap[sortKey] = { label, sortKey, prices: [], rates: [] };
+        }
+        quarterMap[sortKey].prices.push(tx.price);
+        quarterMap[sortKey].rates.push(tx.ratePerSqft);
+      });
+
+      const sortedQuarters = Object.values(quarterMap).sort((a, b) =>
+        a.sortKey.localeCompare(b.sortKey)
+      );
+
+      if (sortedQuarters.length < 2) return;
+
+      // Calculate quarterly averages with change %
+      const quarters: QuarterData[] = sortedQuarters.map((q, idx) => {
+        const avgPrice = Math.round(
+          q.prices.reduce((a, b) => a + b, 0) / q.prices.length
+        );
+        const avgRate = Math.round(
+          q.rates.reduce((a, b) => a + b, 0) / q.rates.length
+        );
+
+        let changePct: number | null = null;
+        if (idx > 0) {
+          const prevRates = sortedQuarters[idx - 1].rates;
+          const prevAvgRate = Math.round(
+            prevRates.reduce((a, b) => a + b, 0) / prevRates.length
+          );
+          if (prevAvgRate > 0) {
+            changePct =
+              Math.round(((avgRate - prevAvgRate) / prevAvgRate) * 1000) / 10;
+          }
+        }
+
+        return {
+          label: q.label,
+          sortKey: q.sortKey,
+          count: q.prices.length,
+          avgPrice,
+          avgRate,
+          changePct,
+        };
+      });
+
+      const firstRate = quarters[0].avgRate;
+      const lastRate = quarters[quarters.length - 1].avgRate;
+
+      trends.push({
+        projectId,
+        project: info.project,
+        district: info.district,
+        totalCount: info.transactions.length,
+        latestAvgRate: lastRate,
+        quarters,
+        trendPositive: lastRate >= firstRate,
+      });
+    });
+
+    // Sort by transaction count descending
+    trends.sort((a, b) => b.totalCount - a.totalCount);
+    return trends;
+  }, [data]);
+
+  if (projectTrends.length === 0) {
     return null;
   }
 
-  const displayed = showAll ? repeatUnits : repeatUnits.slice(0, 10);
+  const displayed = showAll ? projectTrends : projectTrends.slice(0, 10);
 
   return (
     <div className="rounded-xl border border-card-border bg-card-bg">
+      {/* Header */}
       <div className="flex items-center justify-between border-b border-card-border px-5 py-4">
         <div className="flex items-center gap-3">
           <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-accent/10">
-            <History className="h-4 w-4 text-accent" />
+            <TrendingUp className="h-4 w-4 text-accent" />
           </div>
           <div>
             <h2 className="text-sm font-semibold text-foreground">
-              Price History - Repeat Sales
+              Project Price Trends
             </h2>
             <p className="text-xs text-muted">
-              {repeatUnits.length} units with multiple transactions - see how prices
-              changed
+              Average rate per sqft trends for top projects
+              {" "}&bull;{" "}
+              {formatNumber(projectTrends.length)} projects tracked
             </p>
           </div>
         </div>
       </div>
 
+      {/* Project rows */}
       <div className="divide-y divide-card-border">
-        {displayed.map((unit) => {
-          const isExpanded = expandedUnit === unit.key;
-          const first = unit.history[0];
-          const last = unit.history[unit.history.length - 1];
-          const positive = unit.priceChange >= 0;
+        {displayed.map((trend) => {
+          const isExpanded = expandedProject === trend.projectId;
 
           return (
-            <div key={unit.key}>
+            <div key={trend.projectId}>
               {/* Summary row */}
               <button
                 onClick={() =>
-                  setExpandedUnit(isExpanded ? null : unit.key)
+                  setExpandedProject(isExpanded ? null : trend.projectId)
                 }
                 className="flex w-full items-center gap-4 px-5 py-3.5 text-left transition-colors hover:bg-input-bg/30"
               >
-                {/* Change badge */}
+                {/* Trend badge */}
                 <div
                   className={`flex h-12 w-16 shrink-0 flex-col items-center justify-center rounded-lg ${
-                    positive ? "bg-positive/10" : "bg-negative/10"
+                    trend.trendPositive ? "bg-positive/10" : "bg-negative/10"
                   }`}
                 >
-                  {positive ? (
+                  {trend.trendPositive ? (
                     <TrendingUp className="h-3.5 w-3.5 text-positive" />
                   ) : (
                     <TrendingDown className="h-3.5 w-3.5 text-negative" />
                   )}
                   <span
-                    className={`text-xs font-bold ${
-                      positive ? "text-positive" : "text-negative"
+                    className={`mt-0.5 text-[10px] font-bold ${
+                      trend.trendPositive ? "text-positive" : "text-negative"
                     }`}
                   >
-                    {positive ? "+" : ""}
-                    {unit.priceChange}%
+                    {trend.trendPositive ? "UP" : "DOWN"}
                   </span>
                 </div>
 
-                {/* Unit info */}
+                {/* Project info */}
                 <div className="min-w-0 flex-1">
-                  <p className="text-sm font-medium text-foreground">
-                    {unit.building}{" "}
-                    <span className="text-muted">- Unit {unit.history[0].unitNumber}</span>
-                  </p>
-                  <p className="text-xs text-muted">
-                    {unit.area} &bull; {unit.project} &bull;{" "}
-                    {unit.history.length} transactions
+                  <div className="flex items-center gap-2">
+                    <Building2 className="h-3.5 w-3.5 shrink-0 text-muted" />
+                    <p className="truncate text-sm font-medium text-foreground">
+                      {trend.project}
+                    </p>
+                  </div>
+                  <p className="mt-0.5 text-xs text-muted">
+                    {trend.district} &bull; {formatNumber(trend.totalCount)}{" "}
+                    transactions &bull; {trend.quarters.length} quarters
                   </p>
                 </div>
 
-                {/* Price range */}
+                {/* Latest rate */}
                 <div className="hidden text-right sm:block">
-                  <p className="text-xs text-muted">
-                    {first.date} &rarr; {last.date}
-                  </p>
+                  <p className="text-xs text-muted">Latest Avg Rate</p>
                   <p className="text-sm font-semibold text-foreground">
-                    {formatAED(first.price)} &rarr; {formatAED(last.price)}
+                    AED {formatNumber(trend.latestAvgRate)}/sqft
                   </p>
                 </div>
 
@@ -109,63 +241,59 @@ export default function PriceHistory({ data }: PriceHistoryProps) {
                 </div>
               </button>
 
-              {/* Expanded history */}
+              {/* Expanded quarterly table */}
               {isExpanded && (
                 <div className="animate-fade-in bg-input-bg/20 px-5 py-3">
-                  <table className="w-full">
-                    <thead>
-                      <tr className="text-[11px] font-semibold uppercase tracking-wider text-muted">
-                        <th className="pb-2 text-left">#</th>
-                        <th className="pb-2 text-left">Date</th>
-                        <th className="pb-2 text-right">Price</th>
-                        <th className="pb-2 text-right">AED/sqft</th>
-                        <th className="pb-2 text-right">Size</th>
-                        <th className="pb-2 text-right">Change</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {unit.history.map((tx, idx) => {
-                        const prev = idx > 0 ? unit.history[idx - 1] : null;
-                        const pctChange = prev
-                          ? ((tx.price - prev.price) / prev.price) * 100
-                          : null;
-                        return (
+                  <div className="overflow-x-auto">
+                    <table className="w-full">
+                      <thead>
+                        <tr className="text-[11px] font-semibold uppercase tracking-wider text-muted">
+                          <th className="pb-2 text-left">Quarter</th>
+                          <th className="pb-2 text-right">Transactions</th>
+                          <th className="pb-2 text-right">Avg Price</th>
+                          <th className="pb-2 text-right">Avg Rate/sqft</th>
+                          <th className="pb-2 text-right">Change</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {trend.quarters.map((q) => (
                           <tr
-                            key={tx.id}
+                            key={q.sortKey}
                             className="border-t border-card-border/50 text-sm"
                           >
-                            <td className="py-2 text-muted">{idx + 1}</td>
-                            <td className="py-2 text-foreground">{tx.date}</td>
+                            <td className="py-2 font-medium text-foreground">
+                              {q.label}
+                            </td>
+                            <td className="py-2 text-right text-muted">
+                              {formatNumber(q.count)}
+                            </td>
                             <td className="py-2 text-right font-semibold text-foreground">
-                              {formatAED(tx.price)}
+                              {formatAED(q.avgPrice)}
                             </td>
                             <td className="py-2 text-right text-muted">
-                              {tx.pricePerSqft.toLocaleString()}
-                            </td>
-                            <td className="py-2 text-right text-muted">
-                              {tx.size.toLocaleString()} sqft
+                              AED {formatNumber(q.avgRate)}
                             </td>
                             <td className="py-2 text-right">
-                              {pctChange !== null ? (
+                              {q.changePct !== null ? (
                                 <span
                                   className={`text-xs font-bold ${
-                                    pctChange >= 0
+                                    q.changePct >= 0
                                       ? "text-positive"
                                       : "text-negative"
                                   }`}
                                 >
-                                  {pctChange >= 0 ? "+" : ""}
-                                  {pctChange.toFixed(1)}%
+                                  {q.changePct >= 0 ? "+" : ""}
+                                  {q.changePct.toFixed(1)}%
                                 </span>
                               ) : (
                                 <span className="text-xs text-muted">-</span>
                               )}
                             </td>
                           </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
                 </div>
               )}
             </div>
@@ -173,8 +301,8 @@ export default function PriceHistory({ data }: PriceHistoryProps) {
         })}
       </div>
 
-      {/* Show more */}
-      {repeatUnits.length > 10 && (
+      {/* Show more / less */}
+      {projectTrends.length > 10 && (
         <div className="border-t border-card-border px-5 py-3 text-center">
           <button
             onClick={() => setShowAll(!showAll)}
@@ -182,7 +310,7 @@ export default function PriceHistory({ data }: PriceHistoryProps) {
           >
             {showAll
               ? "Show Less"
-              : `Show All ${repeatUnits.length} Units`}
+              : `Show All ${formatNumber(projectTrends.length)} Projects`}
           </button>
         </div>
       )}

@@ -7,7 +7,7 @@
   /* Layered surfaces - 5-8% lighter per step for depth */
   --card-bg: #222d30;
   --card-border: #374144;
-  /* Metallic brass accent - hue shifted from 27° (orange) to 42° (brass) */
+  /* Metallic brass accent - hue shifted from 27 (orange) to 42 (brass) */
   --accent: #c4a04e;
   --accent-hover: #d4b46a;
   --accent-light: rgba(196, 160, 78, 0.12);
@@ -20,6 +20,23 @@
   --input-bg: #2c3638;
   --input-border: #4a5558;
   --header-bg: rgba(26, 36, 38, 0.96);
+}
+
+/* Light theme */
+html.light {
+  --background: #f5f1ec;
+  --foreground: #1a2426;
+  --card-bg: #ffffff;
+  --card-border: #e5ddd4;
+  --accent: #b8923f;
+  --accent-hover: #a07e30;
+  --accent-light: rgba(184, 146, 63, 0.10);
+  --positive: #4a8f48;
+  --negative: #c44b3b;
+  --muted: #8b8580;
+  --input-bg: #f0ebe5;
+  --input-border: #d4cdc5;
+  --header-bg: rgba(245, 241, 236, 0.96);
 }
 
 @theme inline {
@@ -71,6 +88,10 @@ select {
   padding-right: 2.5rem;
 }
 
+html.light select {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%238b8580' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+}
+
 /* Animations */
 @keyframes fadeIn {
   from { opacity: 0; transform: translateY(8px); }
@@ -82,12 +103,20 @@ select {
   to { opacity: 1; }
 }
 
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
 .animate-fade-in {
   animation: fadeIn 0.4s ease-out forwards;
 }
 
 .animate-count {
   animation: countUp 0.6s ease-out forwards;
+}
+
+.animate-spin {
+  animation: spin 1s linear infinite;
 }
 
 /* Stagger animation delays */

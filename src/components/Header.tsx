@@ -1,7 +1,7 @@
 "use client";
 
-import { Building2, Menu, X } from "lucide-react";
-import { useState } from "react";
+import { Building2, Menu, X, Sun, Moon } from "lucide-react";
+import { useState, useEffect } from "react";
 
 const navLinks = [
   { label: "Dashboard", href: "#dashboard" },
@@ -13,13 +13,39 @@ const navLinks = [
 
 export default function Header() {
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [isLight, setIsLight] = useState(false);
+
+  // Initialize theme from localStorage on mount
+  useEffect(() => {
+    const stored = localStorage.getItem("adxb-theme");
+    if (stored === "light") {
+      document.documentElement.classList.add("light");
+      setIsLight(true);
+    } else {
+      document.documentElement.classList.remove("light");
+      setIsLight(false);
+    }
+  }, []);
+
+  const toggleTheme = () => {
+    const next = !isLight;
+    setIsLight(next);
+    if (next) {
+      document.documentElement.classList.add("light");
+      localStorage.setItem("adxb-theme", "light");
+    } else {
+      document.documentElement.classList.remove("light");
+      localStorage.setItem("adxb-theme", "dark");
+    }
+  };
 
   return (
     <header className="sticky top-0 z-50 border-b border-card-border bg-header-bg backdrop-blur-md">
       {/* Demo Banner */}
       <div className="bg-accent/15 border-b border-accent/20 px-4 py-1.5 text-center">
         <p className="text-xs font-medium text-accent">
-          DEMO &mdash; Created by <span className="font-bold">Sand Square Group</span>
+          DEMO &mdash; Created by{" "}
+          <span className="font-bold">Sand Square Group</span>
         </p>
       </div>
       <div className="mx-auto flex h-16 max-w-[1440px] items-center justify-between px-4 lg:px-8">
@@ -51,23 +77,50 @@ export default function Header() {
           ))}
         </nav>
 
-        {/* CTA */}
+        {/* CTA + Theme Toggle */}
         <div className="hidden items-center gap-3 md:flex">
-          <span className="text-xs text-muted">
-            Powered by ADREC Data
-          </span>
+          <span className="text-xs text-muted">Powered by ADREC Data</span>
+          <button
+            onClick={toggleTheme}
+            className="flex h-9 w-9 items-center justify-center rounded-lg border border-input-border text-muted transition-colors hover:border-accent hover:text-accent"
+            aria-label={isLight ? "Switch to dark theme" : "Switch to light theme"}
+            title={isLight ? "Switch to dark theme" : "Switch to light theme"}
+          >
+            {isLight ? (
+              <Moon className="h-4 w-4" />
+            ) : (
+              <Sun className="h-4 w-4" />
+            )}
+          </button>
           <button className="rounded-full bg-accent px-4 py-2 text-sm font-semibold text-background transition-colors hover:bg-accent-hover">
             Export Data
           </button>
         </div>
 
         {/* Mobile menu button */}
-        <button
-          className="md:hidden p-2 text-muted"
-          onClick={() => setMobileOpen(!mobileOpen)}
-        >
-          {mobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
-        </button>
+        <div className="flex items-center gap-2 md:hidden">
+          <button
+            onClick={toggleTheme}
+            className="flex h-9 w-9 items-center justify-center rounded-lg border border-input-border text-muted transition-colors hover:border-accent hover:text-accent"
+            aria-label={isLight ? "Switch to dark theme" : "Switch to light theme"}
+          >
+            {isLight ? (
+              <Moon className="h-4 w-4" />
+            ) : (
+              <Sun className="h-4 w-4" />
+            )}
+          </button>
+          <button
+            className="p-2 text-muted"
+            onClick={() => setMobileOpen(!mobileOpen)}
+          >
+            {mobileOpen ? (
+              <X className="h-5 w-5" />
+            ) : (
+              <Menu className="h-5 w-5" />
+            )}
+          </button>
+        </div>
       </div>
 
       {/* Mobile Nav */}

@@ -16,6 +16,7 @@ import {
 } from "date-fns";
 
 export type DatePreset =
+  | "all_time"
   | "today"
   | "7d"
   | "30d"
@@ -31,53 +32,55 @@ export type DatePreset =
   | "custom";
 
 export interface FilterState {
-  areaId: string;
-  projectId: string;
-  buildingId: string;
+  district: string;
+  project: string;
   propertyType: string;
-  transactionType: string;
-  status: string;
+  status: string;        // Off-Plan | Ready
+  sequence: string;      // Primary | Secondary
+  assetClass: string;    // residential | commercial etc.
   bedrooms: string;
-  bathrooms: string;
-  maidsRoom: string;
   searchQuery: string;
   priceMin: string;
   priceMax: string;
   sizeMin: string;
   sizeMax: string;
-  paymentMethod: string;
-  developer: string;
+  rateMin: string;
+  rateMax: string;
   datePreset: DatePreset;
   dateFrom: string;
   dateTo: string;
 }
 
 export const defaultFilters: FilterState = {
-  areaId: "",
-  projectId: "",
-  buildingId: "",
+  district: "",
+  project: "",
   propertyType: "",
-  transactionType: "",
   status: "",
+  sequence: "",
+  assetClass: "",
   bedrooms: "",
-  bathrooms: "",
-  maidsRoom: "",
   searchQuery: "",
   priceMin: "",
   priceMax: "",
   sizeMin: "",
   sizeMax: "",
-  paymentMethod: "",
-  developer: "",
+  rateMin: "",
+  rateMax: "",
   datePreset: "this_year",
   dateFrom: "",
   dateTo: "",
 };
 
-export function getDateRange(preset: DatePreset, customFrom?: string, customTo?: string): { start: Date; end: Date } {
+export function getDateRange(
+  preset: DatePreset,
+  customFrom?: string,
+  customTo?: string
+): { start: Date; end: Date } {
   const now = new Date();
 
   switch (preset) {
+    case "all_time":
+      return { start: new Date(2019, 0, 1), end: endOfDay(now) };
     case "today":
       return { start: startOfDay(now), end: endOfDay(now) };
     case "7d":
@@ -87,7 +90,10 @@ export function getDateRange(preset: DatePreset, customFrom?: string, customTo?:
     case "90d":
       return { start: startOfDay(subDays(now, 90)), end: endOfDay(now) };
     case "this_week":
-      return { start: startOfWeek(now, { weekStartsOn: 1 }), end: endOfWeek(now, { weekStartsOn: 1 }) };
+      return {
+        start: startOfWeek(now, { weekStartsOn: 1 }),
+        end: endOfWeek(now, { weekStartsOn: 1 }),
+      };
     case "this_month":
       return { start: startOfMonth(now), end: endOfMonth(now) };
     case "this_quarter": {
@@ -118,7 +124,9 @@ export function getDateRange(preset: DatePreset, customFrom?: string, customTo?:
       return { start: startOfYear(now), end: endOfDay(now) };
     case "custom":
       return {
-        start: customFrom ? startOfDay(parseISO(customFrom)) : startOfYear(subYears(now, 3)),
+        start: customFrom
+          ? startOfDay(parseISO(customFrom))
+          : new Date(2019, 0, 1),
         end: customTo ? endOfDay(parseISO(customTo)) : endOfDay(now),
       };
     default:
@@ -130,24 +138,30 @@ export function applyFilters(
   data: Transaction[],
   filters: FilterState
 ): Transaction[] {
-  const { start, end } = getDateRange(filters.datePreset, filters.dateFrom, filters.dateTo);
+  const { start, end } = getDateRange(
+    filters.datePreset,
+    filters.dateFrom,
+    filters.dateTo
+  );
 
-  const searchLower = filters.searchQuery ? filters.searchQuery.toLowerCase() : "";
+  const searchLower = filters.searchQuery
+    ? filters.searchQuery.toLowerCase()
+    : "";
 
   return data.filter((tx) => {
     const txDate = parseISO(tx.date);
 
     if (!isWithinInterval(txDate, { start, end })) return false;
-    if (filters.areaId && tx.areaId !== filters.areaId) return false;
-    if (filters.projectId && tx.projectId !== filters.projectId) return false;
-    if (filters.buildingId && tx.buildingId !== filters.buildingId) return false;
-    if (filters.propertyType && tx.propertyType !== filters.propertyType) return false;
-    if (filters.transactionType && tx.transactionType !== filters.transactionType) return false;
+    if (filters.district && tx.district !== filters.district) return false;
+    if (filters.project && tx.project !== filters.project) return false;
+    if (filters.propertyType && tx.propertyType !== filters.propertyType)
+      return false;
     if (filters.status && tx.status !== filters.status) return false;
-    if (filters.paymentMethod && tx.paymentMethod !== filters.paymentMethod) return false;
-    if (filters.developer && tx.developer !== filters.developer) return false;
+    if (filters.sequence && tx.sequence !== filters.sequence) return false;
+    if (filters.assetClass && tx.assetClass !== filters.assetClass)
+      return false;
 
-    // Bedrooms: exact match, "6+" means 6 or more
+    // Bedrooms
     if (filters.bedrooms) {
       if (filters.bedrooms === "6+") {
         if (tx.bedrooms < 6) return false;
@@ -156,38 +170,32 @@ export function applyFilters(
       }
     }
 
-    // Bathrooms: exact match, "4+" means 4 or more
-    if (filters.bathrooms) {
-      if (filters.bathrooms === "4+") {
-        if (tx.bathrooms < 4) return false;
-      } else {
-        if (tx.bathrooms !== parseInt(filters.bathrooms)) return false;
-      }
-    }
-
-    // Maid's room
-    if (filters.maidsRoom) {
-      if (filters.maidsRoom === "yes" && !tx.maidsRoom) return false;
-      if (filters.maidsRoom === "no" && tx.maidsRoom) return false;
-    }
-
-    // Search query: case-insensitive match against area, project, building, or developer
+    // Search query
     if (searchLower) {
-      const haystack = `${tx.area} ${tx.project} ${tx.building} ${tx.developer}`.toLowerCase();
+      const haystack =
+        `${tx.district} ${tx.project} ${tx.community}`.toLowerCase();
       if (!haystack.includes(searchLower)) return false;
     }
 
+    // Range filters
     if (filters.priceMin && tx.price < parseInt(filters.priceMin)) return false;
     if (filters.priceMax && tx.price > parseInt(filters.priceMax)) return false;
-    if (filters.sizeMin && tx.size < parseInt(filters.sizeMin)) return false;
-    if (filters.sizeMax && tx.size > parseInt(filters.sizeMax)) return false;
+    if (filters.sizeMin && tx.sizeSqft < parseInt(filters.sizeMin))
+      return false;
+    if (filters.sizeMax && tx.sizeSqft > parseInt(filters.sizeMax))
+      return false;
+    if (filters.rateMin && tx.ratePerSqft < parseInt(filters.rateMin))
+      return false;
+    if (filters.rateMax && tx.ratePerSqft > parseInt(filters.rateMax))
+      return false;
 
     return true;
   });
 }
 
 export function formatAED(value: number): string {
-  if (value >= 1_000_000_000) return `AED ${(value / 1_000_000_000).toFixed(1)}B`;
+  if (value >= 1_000_000_000)
+    return `AED ${(value / 1_000_000_000).toFixed(1)}B`;
   if (value >= 1_000_000) return `AED ${(value / 1_000_000).toFixed(1)}M`;
   if (value >= 1_000) return `AED ${(value / 1_000).toFixed(0)}K`;
   return `AED ${value.toLocaleString()}`;

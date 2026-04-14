@@ -3,35 +3,55 @@
 import { Transaction } from "@/data/abu-dhabi";
 import { formatNumber } from "@/lib/filters";
 import { useState, useMemo } from "react";
-import { Flame, TrendingUp, Building2, ChevronDown, ChevronUp, Award } from "lucide-react";
+import {
+  Flame,
+  TrendingUp,
+  Award,
+  ChevronDown,
+  ChevronUp,
+} from "lucide-react";
 
 interface TrendyProjectsProps {
   data: Transaction[];
 }
 
-type TrendCategory = "sale_ready" | "sale_offplan" | "rental";
+type TrendCategory = "sale_ready" | "sale_offplan" | "primary";
 
 const categoryLabels: Record<TrendCategory, string> = {
   sale_ready: "Sale - Ready",
   sale_offplan: "Sale - Off-Plan",
-  rental: "Rentals",
+  primary: "Primary Sales",
 };
 
 const categoryColors: Record<TrendCategory, string> = {
   sale_ready: "#c4a04e",
   sale_offplan: "#d4b46a",
-  rental: "#788182",
+  primary: "#7cb87a",
 };
 
 interface MonthlyProjectRank {
-  month: string;       // YYYY-MM
-  monthLabel: string;  // Jan 2026
+  month: string;
+  monthLabel: string;
   projects: {
     project: string;
-    area: string;
+    district: string;
     count: number;
     rank: number;
   }[];
+}
+
+function filterByCategory(
+  data: Transaction[],
+  category: TrendCategory
+): Transaction[] {
+  switch (category) {
+    case "sale_ready":
+      return data.filter((t) => t.status === "Ready");
+    case "sale_offplan":
+      return data.filter((t) => t.status === "Off-Plan");
+    case "primary":
+      return data.filter((t) => t.sequence === "Primary");
+  }
 }
 
 export default function TrendyProjects({ data }: TrendyProjectsProps) {
@@ -39,38 +59,27 @@ export default function TrendyProjects({ data }: TrendyProjectsProps) {
   const [showAll, setShowAll] = useState(false);
 
   const monthlyRankings = useMemo(() => {
-    // Filter data by category
-    let categoryData: Transaction[];
-    switch (category) {
-      case "sale_ready":
-        categoryData = data.filter(
-          (t) => t.transactionType === "Sale" && t.status === "Ready"
-        );
-        break;
-      case "sale_offplan":
-        categoryData = data.filter(
-          (t) => t.transactionType === "Sale" && t.status === "Off-Plan"
-        );
-        break;
-      case "rental":
-        categoryData = data.filter((t) => t.transactionType === "Rental");
-        break;
-    }
+    const categoryData = filterByCategory(data, category);
 
-    // Group by month, then by project
-    const byMonth: Record<string, Record<string, { project: string; area: string; count: number }>> = {};
+    const byMonth: Record<
+      string,
+      Record<string, { project: string; district: string; count: number }>
+    > = {};
 
     categoryData.forEach((tx) => {
-      const m = tx.date.substring(0, 7); // YYYY-MM
+      const m = tx.date.substring(0, 7);
       if (!byMonth[m]) byMonth[m] = {};
       const key = tx.projectId;
       if (!byMonth[m][key]) {
-        byMonth[m][key] = { project: tx.project, area: tx.area, count: 0 };
+        byMonth[m][key] = {
+          project: tx.project,
+          district: tx.district,
+          count: 0,
+        };
       }
       byMonth[m][key].count++;
     });
 
-    // Convert to sorted rankings
     const rankings: MonthlyProjectRank[] = Object.entries(byMonth)
       .map(([month, projects]) => {
         const sorted = Object.values(projects)
@@ -79,40 +88,51 @@ export default function TrendyProjects({ data }: TrendyProjectsProps) {
           .map((p, i) => ({ ...p, rank: i + 1 }));
 
         const [year, mon] = month.split("-");
-        const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+        const monthNames = [
+          "Jan",
+          "Feb",
+          "Mar",
+          "Apr",
+          "May",
+          "Jun",
+          "Jul",
+          "Aug",
+          "Sep",
+          "Oct",
+          "Nov",
+          "Dec",
+        ];
         const monthLabel = `${monthNames[parseInt(mon) - 1]} ${year}`;
 
         return { month, monthLabel, projects: sorted };
       })
-      .sort((a, b) => b.month.localeCompare(a.month)); // newest first
+      .sort((a, b) => b.month.localeCompare(a.month));
 
     return rankings;
   }, [data, category]);
 
-  // Overall top projects across all months
   const overallTop = useMemo(() => {
-    let categoryData: Transaction[];
-    switch (category) {
-      case "sale_ready":
-        categoryData = data.filter(
-          (t) => t.transactionType === "Sale" && t.status === "Ready"
-        );
-        break;
-      case "sale_offplan":
-        categoryData = data.filter(
-          (t) => t.transactionType === "Sale" && t.status === "Off-Plan"
-        );
-        break;
-      case "rental":
-        categoryData = data.filter((t) => t.transactionType === "Rental");
-        break;
-    }
+    const categoryData = filterByCategory(data, category);
 
-    const byProject: Record<string, { project: string; area: string; count: number; months: Set<string> }> = {};
+    const byProject: Record<
+      string,
+      {
+        project: string;
+        district: string;
+        count: number;
+        months: Set<string>;
+      }
+    > = {};
+
     categoryData.forEach((tx) => {
       const key = tx.projectId;
       if (!byProject[key]) {
-        byProject[key] = { project: tx.project, area: tx.area, count: 0, months: new Set() };
+        byProject[key] = {
+          project: tx.project,
+          district: tx.district,
+          count: 0,
+          months: new Set(),
+        };
       }
       byProject[key].count++;
       byProject[key].months.add(tx.date.substring(0, 7));
@@ -124,18 +144,23 @@ export default function TrendyProjects({ data }: TrendyProjectsProps) {
       .map((p, i) => ({
         rank: i + 1,
         project: p.project,
-        area: p.area,
+        district: p.district,
         totalTx: p.count,
         activeMonths: p.months.size,
       }));
   }, [data, category]);
 
-  const displayedMonths = showAll ? monthlyRankings : monthlyRankings.slice(0, 6);
+  const displayedMonths = showAll
+    ? monthlyRankings
+    : monthlyRankings.slice(0, 6);
 
   if (data.length === 0) return null;
 
   return (
-    <div className="rounded-xl border border-card-border bg-card-bg" id="trendy">
+    <div
+      className="rounded-xl border border-card-border bg-card-bg"
+      id="trendy"
+    >
       {/* Header */}
       <div className="flex flex-wrap items-center justify-between gap-3 border-b border-card-border px-5 py-4">
         <div className="flex items-center gap-3">
@@ -157,7 +182,10 @@ export default function TrendyProjects({ data }: TrendyProjectsProps) {
           {(Object.keys(categoryLabels) as TrendCategory[]).map((cat) => (
             <button
               key={cat}
-              onClick={() => setCategory(cat)}
+              onClick={() => {
+                setCategory(cat);
+                setShowAll(false);
+              }}
               className={`rounded-full px-3 py-1.5 text-xs font-medium transition-all ${
                 category === cat
                   ? "bg-accent text-background shadow-sm shadow-accent/25"
@@ -196,14 +224,17 @@ export default function TrendyProjects({ data }: TrendyProjectsProps) {
                   <p className="truncate text-xs font-medium text-foreground">
                     {p.project}
                   </p>
-                  <p className="truncate text-[10px] text-muted">{p.area}</p>
+                  <p className="truncate text-[10px] text-muted">
+                    {p.district}
+                  </p>
                 </div>
                 <div className="text-right">
                   <p className="text-xs font-semibold text-accent">
                     {formatNumber(p.totalTx)}
                   </p>
                   <p className="text-[10px] text-muted">
-                    {p.activeMonths} {p.activeMonths === 1 ? "month" : "months"}
+                    {p.activeMonths}{" "}
+                    {p.activeMonths === 1 ? "month" : "months"}
                   </p>
                 </div>
               </div>
@@ -244,7 +275,10 @@ export default function TrendyProjects({ data }: TrendyProjectsProps) {
                     const barWidth = (proj.count / maxCount) * 100;
 
                     return (
-                      <div key={`${month.month}-${proj.project}`} className="flex items-center gap-2">
+                      <div
+                        key={`${month.month}-${proj.project}`}
+                        className="flex items-center gap-2"
+                      >
                         <span
                           className={`flex h-5 w-5 shrink-0 items-center justify-center rounded text-[9px] font-bold ${
                             proj.rank === 1
@@ -259,10 +293,13 @@ export default function TrendyProjects({ data }: TrendyProjectsProps) {
                             <span className="truncate text-xs text-foreground">
                               {proj.project}
                               <span className="ml-1 text-[10px] text-muted">
-                                ({proj.area})
+                                ({proj.district})
                               </span>
                             </span>
-                            <span className="shrink-0 text-xs font-semibold" style={{ color: categoryColors[category] }}>
+                            <span
+                              className="shrink-0 text-xs font-semibold"
+                              style={{ color: categoryColors[category] }}
+                            >
                               {proj.count}
                             </span>
                           </div>
