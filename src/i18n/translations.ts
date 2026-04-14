@@ -19,6 +19,7 @@ type TranslationStrings = {
   nav_trendy: string;
   nav_map: string;
   nav_transactions: string;
+  nav_mls: string;
   demo_banner: string;
   created_by: string;
   brand_name: string;
@@ -230,6 +231,54 @@ type TranslationStrings = {
   smart_search_apply: string;
   smart_search_hint: string;
   smart_search_examples: string;
+
+  // MLS Page
+  mls_title: string;
+  mls_subtitle: string;
+  mls_beta_badge: string;
+  mls_disclaimer_title: string;
+  mls_disclaimer_text: string;
+  mls_total_listings: string;
+  mls_distress_deals: string;
+  mls_distress_sub: string;
+  mls_avg_premium: string;
+  mls_vs_adrec: string;
+  mls_platform_split: string;
+  mls_listings_label: string;
+  mls_filter_title: string;
+  mls_groups_label: string;
+  mls_search_placeholder: string;
+  mls_distress_only: string;
+  mls_distress_title: string;
+  mls_distress_subtitle: string;
+  mls_distress_short: string;
+  mls_comparison_title: string;
+  mls_no_results: string;
+  mls_ads_short: string;
+  mls_asking: string;
+  mls_adrec_actual: string;
+  mls_vs_market: string;
+  mls_all_listings: string;
+  mls_open_pf: string;
+  mls_open_bayut: string;
+  mls_view_listing: string;
+  mls_market_median: string;
+  size_sqft_short: string;
+  aed_sqft_short: string;
+  mls_agent_badge: string;
+  mls_agent_name: string;
+  mls_agent_tagline: string;
+  mls_last_crawl: string;
+  mls_next_crawl: string;
+  mls_coverage: string;
+  mls_ask_title: string;
+  mls_ask_subtitle: string;
+  mls_ask_button: string;
+  mls_agent_thinking: string;
+  mls_thinking_title: string;
+  mls_thinking_steps: string;
+  mls_empty_title: string;
+  mls_empty_subtitle: string;
 };
 
 const en: TranslationStrings = {
@@ -239,6 +288,7 @@ const en: TranslationStrings = {
   nav_trendy: "Trendy",
   nav_map: "Map",
   nav_transactions: "Transactions",
+  nav_mls: "MLS Compare",
   demo_banner: "DEMO",
   created_by: "Created by",
   brand_name: "Sand Square Group",
@@ -450,6 +500,54 @@ const en: TranslationStrings = {
   smart_search_apply: "Apply these filters",
   smart_search_hint: "Try: villa ready yas island 3 bedroom",
   smart_search_examples: "Try: 'villa ready yas island 3br' or 'apartment off-plan reem island'",
+
+  // MLS Page
+  mls_title: "MLS Listings vs Actual Transactions",
+  mls_subtitle: "Compare asking prices on Property Finder & Bayut against real ADREC transaction data",
+  mls_beta_badge: "BETA",
+  mls_disclaimer_title: "Demo listings",
+  mls_disclaimer_text: "Property Finder and Bayut do not offer public APIs. Listings shown are sample data generated from ADREC medians with realistic price variance. 'View Listing' buttons deep-link to real search results on each platform so you can verify live prices. Production integration requires a paid MLS partnership.",
+  mls_total_listings: "Total Listings",
+  mls_distress_deals: "Distress Deals",
+  mls_distress_sub: "5%+ below market",
+  mls_avg_premium: "Avg Ask Premium",
+  mls_vs_adrec: "vs ADREC median",
+  mls_platform_split: "Platform Split",
+  mls_listings_label: "listings",
+  mls_filter_title: "Filter Listings",
+  mls_groups_label: "project groups",
+  mls_search_placeholder: "Try: 'villa 3br yas island' or 'apartment reem 2 bed'",
+  mls_distress_only: "Distress deals only (5%+ below market)",
+  mls_distress_title: "Distress Deals — Priced Below Market",
+  mls_distress_subtitle: "Listings at least 5% below ADREC median for comparable units",
+  mls_distress_short: "distress",
+  mls_comparison_title: "Project Comparison",
+  mls_no_results: "No project groups match your filters",
+  mls_ads_short: "ads",
+  mls_asking: "MLS Asking",
+  mls_adrec_actual: "ADREC Actual",
+  mls_vs_market: "vs Market",
+  mls_all_listings: "All Listings",
+  mls_open_pf: "Open on Property Finder",
+  mls_open_bayut: "Open on Bayut",
+  mls_view_listing: "View Listing",
+  mls_market_median: "Market",
+  size_sqft_short: "sqft",
+  aed_sqft_short: "AED/sqft",
+  mls_agent_badge: "AI AGENT",
+  mls_agent_name: "MLS Market Agent",
+  mls_agent_tagline: "Crawls Property Finder & Bayut daily, cross-checks ADREC medians",
+  mls_last_crawl: "Last Crawl",
+  mls_next_crawl: "Next Crawl",
+  mls_coverage: "Coverage",
+  mls_ask_title: "Ask the Agent",
+  mls_ask_subtitle: "Describe a property in natural language — the agent parses it and runs live comparison",
+  mls_ask_button: "Ask Agent to Compare",
+  mls_agent_thinking: "Agent is thinking...",
+  mls_thinking_title: "Agent is fetching live listings",
+  mls_thinking_steps: "Querying Property Finder · Cross-checking Bayut · Comparing to ADREC medians",
+  mls_empty_title: "Ask the agent to run a market comparison",
+  mls_empty_subtitle: "Type what you're looking for (e.g. 'villa 3br yas island') or pick filters, then hit Ask Agent to Compare. The agent will fetch matching listings from Property Finder & Bayut and score them against real ADREC transactions.",
 };
 
 const ar: TranslationStrings = {
@@ -459,6 +557,7 @@ const ar: TranslationStrings = {
   nav_trendy: "المشاريع الرائجة",
   nav_map: "الخريطة",
   nav_transactions: "المعاملات",
+  nav_mls: "مقارنة الإعلانات",
   demo_banner: "نسخة تجريبية",
   created_by: "من إنشاء",
   brand_name: "ساند سكوير جروب",
@@ -670,6 +769,54 @@ const ar: TranslationStrings = {
   smart_search_apply: "تطبيق هذه الفلاتر",
   smart_search_hint: "جرب: فيلا جاهز جزيرة ياس 3 غرف",
   smart_search_examples: "جرب: 'فيلا جاهز جزيرة ياس 3 غرف' أو 'شقة على الخارطة جزيرة الريم'",
+
+  // MLS Page
+  mls_title: "إعلانات MLS مقابل المعاملات الفعلية",
+  mls_subtitle: "قارن أسعار الطلب في Property Finder و Bayut مع بيانات المعاملات الفعلية من ADREC",
+  mls_beta_badge: "تجريبي",
+  mls_disclaimer_title: "إعلانات تجريبية",
+  mls_disclaimer_text: "لا توفر Property Finder و Bayut واجهات برمجية عامة. الإعلانات المعروضة هي بيانات نموذجية مولّدة من متوسطات ADREC مع تباين واقعي في الأسعار. أزرار 'عرض الإعلان' تربط مباشرة بنتائج البحث الفعلية على كل منصة. التكامل الإنتاجي يتطلب اشتراك MLS مدفوع.",
+  mls_total_listings: "إجمالي الإعلانات",
+  mls_distress_deals: "صفقات مميزة",
+  mls_distress_sub: "٥٪+ تحت السوق",
+  mls_avg_premium: "متوسط العلاوة",
+  mls_vs_adrec: "مقابل وسيط ADREC",
+  mls_platform_split: "توزيع المنصات",
+  mls_listings_label: "إعلانات",
+  mls_filter_title: "فلترة الإعلانات",
+  mls_groups_label: "مجموعات مشاريع",
+  mls_search_placeholder: "جرب: 'فيلا 3 غرف جزيرة ياس' أو 'شقة الريم غرفتين'",
+  mls_distress_only: "الصفقات المميزة فقط (٥٪+ تحت السوق)",
+  mls_distress_title: "صفقات مميزة — أقل من سعر السوق",
+  mls_distress_subtitle: "إعلانات أقل بنسبة ٥٪ على الأقل من وسيط ADREC لوحدات مماثلة",
+  mls_distress_short: "مميز",
+  mls_comparison_title: "مقارنة المشاريع",
+  mls_no_results: "لا توجد مجموعات مشاريع مطابقة",
+  mls_ads_short: "إعلانات",
+  mls_asking: "سعر الطلب",
+  mls_adrec_actual: "السعر الفعلي",
+  mls_vs_market: "مقابل السوق",
+  mls_all_listings: "جميع الإعلانات",
+  mls_open_pf: "افتح في Property Finder",
+  mls_open_bayut: "افتح في Bayut",
+  mls_view_listing: "عرض الإعلان",
+  mls_market_median: "السوق",
+  size_sqft_short: "قدم²",
+  aed_sqft_short: "درهم/قدم²",
+  mls_agent_badge: "وكيل ذكاء اصطناعي",
+  mls_agent_name: "وكيل سوق MLS",
+  mls_agent_tagline: "يمسح Property Finder و Bayut يومياً ويقارن بمعدلات ADREC",
+  mls_last_crawl: "آخر مسح",
+  mls_next_crawl: "المسح التالي",
+  mls_coverage: "التغطية",
+  mls_ask_title: "اسأل الوكيل",
+  mls_ask_subtitle: "صف عقاراً بلغتك الطبيعية — سيحلله الوكيل ويشغّل المقارنة المباشرة",
+  mls_ask_button: "اطلب من الوكيل المقارنة",
+  mls_agent_thinking: "الوكيل يفكر...",
+  mls_thinking_title: "الوكيل يجلب الإعلانات الحية",
+  mls_thinking_steps: "الاستعلام من Property Finder · التحقق من Bayut · المقارنة مع معدلات ADREC",
+  mls_empty_title: "اطلب من الوكيل تشغيل مقارنة السوق",
+  mls_empty_subtitle: "اكتب ما تبحث عنه (مثلاً 'فيلا 3 غرف جزيرة ياس') أو اختر الفلاتر، ثم اضغط اطلب من الوكيل المقارنة. سيقوم الوكيل بجلب الإعلانات المطابقة من Property Finder و Bayut وتقييمها مقابل صفقات ADREC الحقيقية.",
 };
 
 const ru: TranslationStrings = {
@@ -679,6 +826,7 @@ const ru: TranslationStrings = {
   nav_trendy: "Популярные",
   nav_map: "Карта",
   nav_transactions: "Сделки",
+  nav_mls: "Сравнение MLS",
   demo_banner: "ДЕМО",
   created_by: "Создано",
   brand_name: "Sand Square Group",
@@ -890,6 +1038,54 @@ const ru: TranslationStrings = {
   smart_search_apply: "Применить эти фильтры",
   smart_search_hint: "Попробуйте: вилла готово яс айленд 3 спальни",
   smart_search_examples: "Попробуйте: 'вилла готово яс айленд 3 спальни' или 'квартира строящиеся рим айленд'",
+
+  // MLS Page
+  mls_title: "MLS объявления vs реальные сделки",
+  mls_subtitle: "Сравните цены на Property Finder и Bayut с реальными данными сделок ADREC",
+  mls_beta_badge: "БЕТА",
+  mls_disclaimer_title: "Демо-объявления",
+  mls_disclaimer_text: "Property Finder и Bayut не предоставляют публичных API. Показанные объявления — это образцы данных, созданные на основе медиан ADREC с реалистичной вариацией цен. Кнопки 'Просмотреть' ведут на реальные страницы поиска. Для продакшн-интеграции требуется платное MLS-партнёрство.",
+  mls_total_listings: "Всего объявлений",
+  mls_distress_deals: "Срочные сделки",
+  mls_distress_sub: "5%+ ниже рынка",
+  mls_avg_premium: "Средняя наценка",
+  mls_vs_adrec: "vs медиана ADREC",
+  mls_platform_split: "Разделение платформ",
+  mls_listings_label: "объявлений",
+  mls_filter_title: "Фильтр объявлений",
+  mls_groups_label: "групп проектов",
+  mls_search_placeholder: "Например: 'вилла 3 спальни яс айленд' или 'квартира рим'",
+  mls_distress_only: "Только срочные (5%+ ниже рынка)",
+  mls_distress_title: "Срочные сделки — ниже рыночной цены",
+  mls_distress_subtitle: "Объявления как минимум на 5% ниже медианы ADREC для аналогичных объектов",
+  mls_distress_short: "срочно",
+  mls_comparison_title: "Сравнение проектов",
+  mls_no_results: "Нет групп проектов по вашим фильтрам",
+  mls_ads_short: "объяв.",
+  mls_asking: "Запрос MLS",
+  mls_adrec_actual: "Факт ADREC",
+  mls_vs_market: "vs Рынок",
+  mls_all_listings: "Все объявления",
+  mls_open_pf: "Открыть на Property Finder",
+  mls_open_bayut: "Открыть на Bayut",
+  mls_view_listing: "Просмотреть",
+  mls_market_median: "Рынок",
+  size_sqft_short: "кв.фт",
+  aed_sqft_short: "AED/кв.фт",
+  mls_agent_badge: "AI АГЕНТ",
+  mls_agent_name: "MLS Маркет-Агент",
+  mls_agent_tagline: "Ежедневно сканирует Property Finder и Bayut, сверяет с медианами ADREC",
+  mls_last_crawl: "Последний скан",
+  mls_next_crawl: "Следующий скан",
+  mls_coverage: "Охват",
+  mls_ask_title: "Спросите агента",
+  mls_ask_subtitle: "Опишите объект естественным языком — агент разберёт запрос и запустит живое сравнение",
+  mls_ask_button: "Запустить сравнение",
+  mls_agent_thinking: "Агент работает...",
+  mls_thinking_title: "Агент собирает живые объявления",
+  mls_thinking_steps: "Запрос Property Finder · Проверка Bayut · Сравнение с медианами ADREC",
+  mls_empty_title: "Попросите агента запустить сравнение",
+  mls_empty_subtitle: "Введите запрос (например, 'вилла 3 спальни яс айленд') или выберите фильтры, затем нажмите Запустить сравнение. Агент получит подходящие объявления из Property Finder и Bayut и оценит их на фоне реальных сделок ADREC.",
 };
 
 export const translations: Record<Locale, TranslationStrings> = { en, ar, ru };

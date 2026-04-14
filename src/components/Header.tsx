@@ -50,11 +50,11 @@ export default function Header() {
   };
 
   const navLinks = [
-    { label: t("nav_dashboard"), href: "#dashboard" },
-    { label: t("nav_trends"), href: "#trends" },
-    { label: t("nav_trendy"), href: "#trendy" },
-    { label: t("nav_map"), href: "#map" },
-    { label: t("nav_transactions"), href: "#transactions" },
+    { label: t("nav_dashboard"), href: "/" },
+    { label: t("nav_mls"), href: "/mls" },
+    { label: t("nav_trendy"), href: "/#trendy" },
+    { label: t("nav_map"), href: "/#map" },
+    { label: t("nav_transactions"), href: "/#transactions" },
   ];
 
   const langFlag: Record<Locale, string> = {
