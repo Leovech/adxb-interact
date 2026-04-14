@@ -124,3 +124,26 @@ html.light select {
 .stagger-2 { animation-delay: 0.1s; }
 .stagger-3 { animation-delay: 0.15s; }
 .stagger-4 { animation-delay: 0.2s; }
+
+/* RTL support for Arabic */
+html.rtl {
+  direction: rtl;
+}
+
+html.rtl select {
+  background-position: left 0.75rem center;
+  padding-right: 0.75rem;
+  padding-left: 2.5rem;
+}
+
+/* RTL: flip the chat widget and floating button position */
+html.rtl .fixed.end-6 {
+  left: 1.5rem;
+  right: auto;
+}
+
+/* RTL: logical properties for maplibre popups */
+html.rtl .maplibregl-popup-content {
+  direction: rtl;
+  text-align: right;
+}

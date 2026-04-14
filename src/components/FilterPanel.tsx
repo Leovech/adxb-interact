@@ -4,6 +4,7 @@ import { getProjectsForDistrict, Hierarchy } from "@/data/abu-dhabi";
 import { FilterState, DatePreset, defaultFilters } from "@/lib/filters";
 import { RotateCcw, Calendar, Search, ChevronDown, MapPin, Building2 } from "lucide-react";
 import { useState, useMemo, useRef, useEffect } from "react";
+import { useT } from "@/i18n/LanguageContext";
 
 interface FilterPanelProps {
   filters: FilterState;
@@ -11,67 +12,6 @@ interface FilterPanelProps {
   transactionCount: number;
   hierarchy: Hierarchy;
 }
-
-const datePresets: { value: DatePreset; label: string }[] = [
-  { value: "all_time", label: "All Time" },
-  { value: "today", label: "Today" },
-  { value: "7d", label: "7D" },
-  { value: "30d", label: "30D" },
-  { value: "90d", label: "90D" },
-  { value: "this_week", label: "This Week" },
-  { value: "this_month", label: "This Month" },
-  { value: "this_quarter", label: "Q" },
-  { value: "this_year", label: "This Year" },
-  { value: "last_month", label: "Last Month" },
-  { value: "last_quarter", label: "Last Q" },
-  { value: "last_year", label: "Last Year" },
-  { value: "ytd", label: "YTD" },
-  { value: "custom", label: "Custom" },
-];
-
-const propertyTypeOptions = [
-  { value: "", label: "All" },
-  { value: "Apartment", label: "Apartment" },
-  { value: "Villa", label: "Villa" },
-  { value: "Townhouse", label: "Townhouse" },
-  { value: "Duplex", label: "Duplex" },
-  { value: "Land", label: "Land" },
-  { value: "Penthouse", label: "Penthouse" },
-  { value: "Office", label: "Office" },
-  { value: "Retail", label: "Retail" },
-  { value: "Other", label: "Other" },
-];
-
-const statusOptions = [
-  { value: "", label: "All" },
-  { value: "Off-Plan", label: "Off-Plan" },
-  { value: "Ready", label: "Ready" },
-];
-
-const sequenceOptions = [
-  { value: "", label: "All" },
-  { value: "Primary", label: "Primary (First Sale)" },
-  { value: "Secondary", label: "Secondary (Resale)" },
-];
-
-const assetClassOptions = [
-  { value: "", label: "All" },
-  { value: "residential", label: "Residential" },
-  { value: "commercial", label: "Commercial" },
-  { value: "agricultural", label: "Agricultural" },
-  { value: "other", label: "Other" },
-];
-
-const bedroomOptions = [
-  { value: "", label: "All" },
-  { value: "0", label: "Studio" },
-  { value: "1", label: "1BR" },
-  { value: "2", label: "2BR" },
-  { value: "3", label: "3BR" },
-  { value: "4", label: "4BR" },
-  { value: "5", label: "5BR" },
-  { value: "6+", label: "6+BR" },
-];
 
 function PillGroup({
   label,
@@ -114,9 +54,71 @@ export default function FilterPanel({
   transactionCount,
   hierarchy,
 }: FilterPanelProps) {
+  const t = useT();
   const [showRanges, setShowRanges] = useState(false);
   const [searchFocused, setSearchFocused] = useState(false);
   const searchRef = useRef<HTMLDivElement>(null);
+
+  const datePresets: { value: DatePreset; label: string }[] = [
+    { value: "all_time", label: t("all_time") },
+    { value: "today", label: t("today") },
+    { value: "7d", label: t("d7") },
+    { value: "30d", label: t("d30") },
+    { value: "90d", label: t("d90") },
+    { value: "this_week", label: t("this_week") },
+    { value: "this_month", label: t("this_month") },
+    { value: "this_quarter", label: t("this_quarter") },
+    { value: "this_year", label: t("this_year") },
+    { value: "last_month", label: t("last_month") },
+    { value: "last_quarter", label: t("last_quarter") },
+    { value: "last_year", label: t("last_year") },
+    { value: "ytd", label: t("ytd") },
+    { value: "custom", label: t("custom") },
+  ];
+
+  const propertyTypeOptions = [
+    { value: "", label: t("all") },
+    { value: "Apartment", label: t("apartment") },
+    { value: "Villa", label: t("villa") },
+    { value: "Townhouse", label: t("townhouse") },
+    { value: "Duplex", label: t("duplex") },
+    { value: "Land", label: t("land") },
+    { value: "Penthouse", label: t("penthouse") },
+    { value: "Office", label: t("office") },
+    { value: "Retail", label: t("retail") },
+    { value: "Other", label: t("other") },
+  ];
+
+  const statusOptions = [
+    { value: "", label: t("all") },
+    { value: "Off-Plan", label: t("off_plan") },
+    { value: "Ready", label: t("ready") },
+  ];
+
+  const sequenceOptions = [
+    { value: "", label: t("all") },
+    { value: "Primary", label: t("primary_first_sale") },
+    { value: "Secondary", label: t("secondary_resale") },
+  ];
+
+  const assetClassOptions = [
+    { value: "", label: t("all") },
+    { value: "residential", label: t("residential") },
+    { value: "commercial", label: t("commercial") },
+    { value: "agricultural", label: t("agricultural") },
+    { value: "other", label: t("other") },
+  ];
+
+  const bedroomOptions = [
+    { value: "", label: t("all") },
+    { value: "0", label: t("studio") },
+    { value: "1", label: "1BR" },
+    { value: "2", label: "2BR" },
+    { value: "3", label: "3BR" },
+    { value: "4", label: "4BR" },
+    { value: "5", label: "5BR" },
+    { value: "6+", label: "6+BR" },
+  ];
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -204,13 +206,13 @@ export default function FilterPanel({
           </div>
           <div>
             <h2 className="text-sm font-semibold text-foreground">
-              Search Transactions
+              {t("search_transactions")}
             </h2>
             <p className="text-xs text-muted">
-              {transactionCount.toLocaleString()} results
+              {transactionCount.toLocaleString()} {t("results")}
               {activeFilterCount > 0 && (
-                <span className="ml-1.5 inline-flex items-center rounded-full bg-accent/20 px-1.5 py-0.5 text-[10px] font-semibold text-accent">
-                  {activeFilterCount} filters
+                <span className="ms-1.5 inline-flex items-center rounded-full bg-accent/20 px-1.5 py-0.5 text-[10px] font-semibold text-accent">
+                  {activeFilterCount} {t("filters")}
                 </span>
               )}
             </p>
@@ -221,31 +223,31 @@ export default function FilterPanel({
           className="flex items-center gap-1.5 rounded-lg border border-input-border px-3 py-2 text-xs font-medium text-muted transition-colors hover:border-negative hover:text-negative"
         >
           <RotateCcw className="h-3 w-3" />
-          Clear All
+          {t("clear_all")}
         </button>
       </div>
 
       {/* Search Box with Autocomplete */}
       <div className="border-b border-card-border px-5 py-4">
         <div className="relative" ref={searchRef}>
-          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted" />
+          <Search className="pointer-events-none absolute start-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted" />
           <input
             type="text"
-            placeholder="Search district, project, community..."
+            placeholder={t("search_placeholder")}
             value={filters.searchQuery}
             onChange={(e) => update({ searchQuery: e.target.value })}
             onFocus={() => setSearchFocused(true)}
-            className="w-full rounded-lg border border-input-border bg-input-bg py-2.5 pl-10 pr-3 text-sm text-foreground outline-none transition-colors placeholder:text-muted/60 focus:border-accent focus:ring-1 focus:ring-accent/30"
+            className="w-full rounded-lg border border-input-border bg-input-bg py-2.5 ps-10 pe-3 text-sm text-foreground outline-none transition-colors placeholder:text-muted/60 focus:border-accent focus:ring-1 focus:ring-accent/30"
           />
 
           {/* Autocomplete Dropdown */}
           {showDropdown && (
-            <div className="absolute left-0 right-0 top-full z-50 mt-1 max-h-80 overflow-y-auto rounded-xl border border-card-border bg-card-bg shadow-xl shadow-black/20">
+            <div className="absolute start-0 end-0 top-full z-50 mt-1 max-h-80 overflow-y-auto rounded-xl border border-card-border bg-card-bg shadow-xl shadow-black/20">
               {/* District matches */}
               {suggestions.districts.length > 0 && (
                 <div className="border-b border-card-border px-3 py-2">
                   <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-wider text-muted">
-                    Districts
+                    {t("districts")}
                   </p>
                   {suggestions.districts.map((d) => (
                     <button
@@ -261,7 +263,7 @@ export default function FilterPanel({
                           {d.name}
                         </p>
                         <p className="text-[11px] text-muted">
-                          {d.count.toLocaleString()} transactions &middot; {d.projectCount} projects
+                          {d.count.toLocaleString()} {t("transactions_label")} &middot; {d.projectCount} {t("projects_label")}
                         </p>
                       </div>
                     </button>
@@ -273,7 +275,7 @@ export default function FilterPanel({
               {suggestions.projects.length > 0 && (
                 <div className="px-3 py-2">
                   <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-wider text-muted">
-                    Projects
+                    {t("projects")}
                   </p>
                   {suggestions.projects.map((p) => (
                     <button
@@ -289,7 +291,7 @@ export default function FilterPanel({
                           {p.name}
                         </p>
                         <p className="text-[11px] text-muted">
-                          {p.district} &middot; {p.count.toLocaleString()} transactions
+                          {p.district} &middot; {p.count.toLocaleString()} {t("transactions_label")}
                         </p>
                       </div>
                     </button>
@@ -304,7 +306,7 @@ export default function FilterPanel({
       {/* Property Type Pills */}
       <div className="border-b border-card-border px-5 py-4">
         <PillGroup
-          label="Property Type"
+          label={t("property_type")}
           options={propertyTypeOptions}
           value={filters.propertyType}
           onChange={(v) => update({ propertyType: v })}
@@ -314,19 +316,19 @@ export default function FilterPanel({
       {/* Status + Sale Type + Asset Class */}
       <div className="grid grid-cols-1 gap-4 border-b border-card-border px-5 py-4 sm:grid-cols-3">
         <PillGroup
-          label="Status"
+          label={t("status")}
           options={statusOptions}
           value={filters.status}
           onChange={(v) => update({ status: v })}
         />
         <PillGroup
-          label="Sale Type"
+          label={t("sale_type")}
           options={sequenceOptions}
           value={filters.sequence}
           onChange={(v) => update({ sequence: v })}
         />
         <PillGroup
-          label="Asset Class"
+          label={t("asset_class")}
           options={assetClassOptions}
           value={filters.assetClass}
           onChange={(v) => update({ assetClass: v })}
@@ -336,7 +338,7 @@ export default function FilterPanel({
       {/* Bedrooms */}
       <div className="border-b border-card-border px-5 py-4">
         <PillGroup
-          label="Bedrooms"
+          label={t("bedrooms")}
           options={bedroomOptions}
           value={filters.bedrooms}
           onChange={(v) => update({ bedrooms: v })}
@@ -346,7 +348,7 @@ export default function FilterPanel({
       {/* Location: District -> Project */}
       <div className="border-b border-card-border px-5 py-4">
         <label className="mb-2 block text-[11px] font-semibold uppercase tracking-wider text-muted">
-          Location
+          {t("location")}
         </label>
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <select
@@ -354,7 +356,7 @@ export default function FilterPanel({
             onChange={(e) => update({ district: e.target.value })}
             className={selectClass}
           >
-            <option value="">All Districts</option>
+            <option value="">{t("all_districts")}</option>
             {sortedDistricts.map((d) => (
               <option key={d.id} value={d.name}>
                 {d.name} ({d.count.toLocaleString()})
@@ -368,7 +370,7 @@ export default function FilterPanel({
             disabled={!filters.district}
           >
             <option value="">
-              {filters.district ? "All Projects" : "Select District First"}
+              {filters.district ? t("all_projects") : t("select_district_first")}
             </option>
             {projectsForDistrict.map((p) => (
               <option key={p.id} value={p.name}>
@@ -382,8 +384,8 @@ export default function FilterPanel({
       {/* Date Presets */}
       <div className="border-b border-card-border px-5 py-4">
         <label className="mb-2 block text-[11px] font-semibold uppercase tracking-wider text-muted">
-          <Calendar className="mr-1 inline h-3 w-3" />
-          Time Period
+          <Calendar className="me-1 inline h-3 w-3" />
+          {t("time_period")}
         </label>
         <div className="flex flex-wrap gap-1.5">
           {datePresets.map((p) => (
@@ -403,7 +405,7 @@ export default function FilterPanel({
         {filters.datePreset === "custom" && (
           <div className="mt-3 flex flex-wrap gap-3">
             <div className="flex items-center gap-2">
-              <label className="text-xs text-muted">From</label>
+              <label className="text-xs text-muted">{t("from")}</label>
               <input
                 type="date"
                 value={filters.dateFrom}
@@ -412,7 +414,7 @@ export default function FilterPanel({
               />
             </div>
             <div className="flex items-center gap-2">
-              <label className="text-xs text-muted">To</label>
+              <label className="text-xs text-muted">{t("to")}</label>
               <input
                 type="date"
                 value={filters.dateTo}
@@ -433,26 +435,26 @@ export default function FilterPanel({
           <ChevronDown
             className={`h-3 w-3 transition-transform ${showRanges ? "rotate-180" : ""}`}
           />
-          {showRanges ? "Hide" : "Show"} Price, Size & Rate Filters
+          {showRanges ? t("hide_price_filters") : t("show_price_filters")}
         </button>
         {showRanges && (
           <div className="animate-fade-in grid grid-cols-1 gap-3 sm:grid-cols-3">
             {/* Price Range */}
             <div>
               <label className="mb-1.5 block text-xs font-medium text-muted">
-                Price (AED)
+                {t("price_aed")}
               </label>
               <div className="flex gap-2">
                 <input
                   type="number"
-                  placeholder="Min"
+                  placeholder={t("min")}
                   value={filters.priceMin}
                   onChange={(e) => update({ priceMin: e.target.value })}
                   className={inputClass}
                 />
                 <input
                   type="number"
-                  placeholder="Max"
+                  placeholder={t("max")}
                   value={filters.priceMax}
                   onChange={(e) => update({ priceMax: e.target.value })}
                   className={inputClass}
@@ -462,19 +464,19 @@ export default function FilterPanel({
             {/* Size Range */}
             <div>
               <label className="mb-1.5 block text-xs font-medium text-muted">
-                Size (sqft)
+                {t("size_sqft")}
               </label>
               <div className="flex gap-2">
                 <input
                   type="number"
-                  placeholder="Min"
+                  placeholder={t("min")}
                   value={filters.sizeMin}
                   onChange={(e) => update({ sizeMin: e.target.value })}
                   className={inputClass}
                 />
                 <input
                   type="number"
-                  placeholder="Max"
+                  placeholder={t("max")}
                   value={filters.sizeMax}
                   onChange={(e) => update({ sizeMax: e.target.value })}
                   className={inputClass}
@@ -484,19 +486,19 @@ export default function FilterPanel({
             {/* Rate Range */}
             <div>
               <label className="mb-1.5 block text-xs font-medium text-muted">
-                Rate (AED/sqft)
+                {t("rate_aed_sqft")}
               </label>
               <div className="flex gap-2">
                 <input
                   type="number"
-                  placeholder="Min"
+                  placeholder={t("min")}
                   value={filters.rateMin}
                   onChange={(e) => update({ rateMin: e.target.value })}
                   className={inputClass}
                 />
                 <input
                   type="number"
-                  placeholder="Max"
+                  placeholder={t("max")}
                   value={filters.rateMax}
                   onChange={(e) => update({ rateMax: e.target.value })}
                   className={inputClass}

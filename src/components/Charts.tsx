@@ -19,6 +19,7 @@ import {
   AreaChart,
   Area,
 } from "recharts";
+import { useT } from "@/i18n/LanguageContext";
 
 interface ChartsProps {
   data: Transaction[];
@@ -49,6 +50,8 @@ const tooltipStyle = {
 };
 
 export default function Charts({ data }: ChartsProps) {
+  const t = useT();
+
   // Monthly transaction volume
   const monthlyVolume = useMemo(() => {
     const byMonth: Record<string, number> = {};
@@ -109,16 +112,16 @@ export default function Charts({ data }: ChartsProps) {
     data.forEach((tx) => {
       const label =
         tx.status === "Off-Plan"
-          ? "Off-Plan"
+          ? t("off_plan")
           : tx.status === "Ready"
-            ? "Ready"
-            : "Other";
+            ? t("ready")
+            : t("other");
       counts[label] = (counts[label] || 0) + 1;
     });
     return Object.entries(counts)
       .map(([name, value]) => ({ name, value }))
       .sort((a, b) => b.value - a.value);
-  }, [data]);
+  }, [data, t]);
 
   const formatMonth = (v: string) => {
     const [y, m] = v.split("-");
@@ -130,7 +133,7 @@ export default function Charts({ data }: ChartsProps) {
       {/* Monthly Transaction Volume */}
       <div className="rounded-xl border border-card-border bg-card-bg p-5">
         <h3 className="mb-4 text-sm font-semibold text-foreground">
-          Monthly Transaction Volume
+          {t("monthly_volume")}
         </h3>
         <ResponsiveContainer width="100%" height={280}>
           <AreaChart data={monthlyVolume}>
@@ -151,7 +154,7 @@ export default function Charts({ data }: ChartsProps) {
               {...tooltipStyle}
               formatter={(value) => [
                 Number(value).toLocaleString(),
-                "Transactions",
+                t("transactions_label"),
               ]}
             />
             <Area
@@ -168,7 +171,7 @@ export default function Charts({ data }: ChartsProps) {
       {/* Average Rate per Sqft Trend */}
       <div className="rounded-xl border border-card-border bg-card-bg p-5">
         <h3 className="mb-4 text-sm font-semibold text-foreground">
-          Avg Rate per Sqft Trend
+          {t("avg_rate_trend")}
         </h3>
         <ResponsiveContainer width="100%" height={280}>
           <LineChart data={avgRateTrend}>
@@ -183,7 +186,7 @@ export default function Charts({ data }: ChartsProps) {
               {...tooltipStyle}
               formatter={(value) => [
                 `AED ${Number(value).toLocaleString()}`,
-                "Avg/sqft",
+                t("avg_sqft"),
               ]}
             />
             <Line
@@ -200,7 +203,7 @@ export default function Charts({ data }: ChartsProps) {
       {/* Transactions by District */}
       <div className="rounded-xl border border-card-border bg-card-bg p-5">
         <h3 className="mb-4 text-sm font-semibold text-foreground">
-          Transactions by District
+          {t("transactions_by_district")}
         </h3>
         <ResponsiveContainer width="100%" height={280}>
           <BarChart data={districtBreakdown} layout="vertical">
@@ -216,7 +219,7 @@ export default function Charts({ data }: ChartsProps) {
               {...tooltipStyle}
               formatter={(value) => [
                 Number(value).toLocaleString(),
-                "Transactions",
+                t("transactions_label"),
               ]}
             />
             <Bar dataKey="count" radius={[0, 4, 4, 0]}>
@@ -232,7 +235,7 @@ export default function Charts({ data }: ChartsProps) {
       <div className="grid grid-cols-2 gap-4">
         <div className="rounded-xl border border-card-border bg-card-bg p-5">
           <h3 className="mb-2 text-sm font-semibold text-foreground">
-            Property Types
+            {t("property_types")}
           </h3>
           <ResponsiveContainer width="100%" height={250}>
             <PieChart>
@@ -257,7 +260,7 @@ export default function Charts({ data }: ChartsProps) {
                 {...tooltipStyle}
                 formatter={(value) => [
                   Number(value).toLocaleString(),
-                  "Count",
+                  t("count"),
                 ]}
               />
             </PieChart>
@@ -266,7 +269,7 @@ export default function Charts({ data }: ChartsProps) {
 
         <div className="rounded-xl border border-card-border bg-card-bg p-5">
           <h3 className="mb-2 text-sm font-semibold text-foreground">
-            Off-Plan vs Ready
+            {t("off_plan_vs_ready")}
           </h3>
           <ResponsiveContainer width="100%" height={250}>
             <PieChart>
@@ -287,9 +290,9 @@ export default function Charts({ data }: ChartsProps) {
                   <Cell
                     key={i}
                     fill={
-                      entry.name === "Off-Plan"
+                      entry.name === t("off_plan")
                         ? "#c4a04e"
-                        : entry.name === "Ready"
+                        : entry.name === t("ready")
                           ? "#7cb87a"
                           : "#788182"
                     }
@@ -300,7 +303,7 @@ export default function Charts({ data }: ChartsProps) {
                 {...tooltipStyle}
                 formatter={(value) => [
                   Number(value).toLocaleString(),
-                  "Count",
+                  t("count"),
                 ]}
               />
             </PieChart>

@@ -1,19 +1,17 @@
 "use client";
 
-import { Building2, Menu, X, Sun, Moon } from "lucide-react";
-import { useState, useEffect } from "react";
-
-const navLinks = [
-  { label: "Dashboard", href: "#dashboard" },
-  { label: "Trends", href: "#trends" },
-  { label: "Trendy", href: "#trendy" },
-  { label: "Map", href: "#map" },
-  { label: "Transactions", href: "#transactions" },
-];
+import { Building2, Menu, X, Sun, Moon, Globe } from "lucide-react";
+import { useState, useEffect, useRef } from "react";
+import { useLanguage, useT } from "@/i18n/LanguageContext";
+import { Locale, localeNames } from "@/i18n/translations";
 
 export default function Header() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [isLight, setIsLight] = useState(false);
+  const [langOpen, setLangOpen] = useState(false);
+  const langRef = useRef<HTMLDivElement>(null);
+  const { locale, setLocale } = useLanguage();
+  const t = useT();
 
   // Initialize theme from localStorage on mount
   useEffect(() => {
@@ -25,6 +23,17 @@ export default function Header() {
       document.documentElement.classList.remove("light");
       setIsLight(false);
     }
+  }, []);
+
+  // Close lang dropdown on click outside
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (langRef.current && !langRef.current.contains(e.target as Node)) {
+        setLangOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
   const toggleTheme = () => {
@@ -39,13 +48,27 @@ export default function Header() {
     }
   };
 
+  const navLinks = [
+    { label: t("nav_dashboard"), href: "#dashboard" },
+    { label: t("nav_trends"), href: "#trends" },
+    { label: t("nav_trendy"), href: "#trendy" },
+    { label: t("nav_map"), href: "#map" },
+    { label: t("nav_transactions"), href: "#transactions" },
+  ];
+
+  const langFlag: Record<Locale, string> = {
+    en: "EN",
+    ar: "AR",
+    ru: "RU",
+  };
+
   return (
     <header className="sticky top-0 z-50 border-b border-card-border bg-header-bg backdrop-blur-md">
       {/* Demo Banner */}
       <div className="bg-accent/15 border-b border-accent/20 px-4 py-1.5 text-center">
         <p className="text-xs font-medium text-accent">
-          DEMO &mdash; Created by{" "}
-          <span className="font-bold">Sand Square Group</span>
+          {t("demo_banner")} &mdash; {t("created_by")}{" "}
+          <span className="font-bold">{t("brand_name")}</span>
         </p>
       </div>
       <div className="mx-auto flex h-16 max-w-[1440px] items-center justify-between px-4 lg:px-8">
@@ -59,7 +82,7 @@ export default function Header() {
               ADXB<span className="text-accent">Interact</span>
             </span>
             <span className="text-[10px] uppercase tracking-widest text-muted">
-              Abu Dhabi Real Estate
+              {t("subtitle")}
             </span>
           </div>
         </a>
@@ -77,14 +100,48 @@ export default function Header() {
           ))}
         </nav>
 
-        {/* CTA + Theme Toggle */}
-        <div className="hidden items-center gap-3 md:flex">
-          <span className="text-xs text-muted">Powered by ADREC Data</span>
+        {/* CTA + Theme Toggle + Language */}
+        <div className="hidden items-center gap-2 md:flex">
+          <span className="text-xs text-muted">{t("powered_by")}</span>
+
+          {/* Language Switcher */}
+          <div className="relative" ref={langRef}>
+            <button
+              onClick={() => setLangOpen(!langOpen)}
+              className="flex h-9 items-center gap-1.5 rounded-lg border border-input-border px-2.5 text-muted transition-colors hover:border-accent hover:text-accent"
+            >
+              <Globe className="h-3.5 w-3.5" />
+              <span className="text-xs font-semibold">{langFlag[locale]}</span>
+            </button>
+            {langOpen && (
+              <div className="absolute end-0 top-full z-50 mt-1 w-36 rounded-xl border border-card-border bg-card-bg py-1 shadow-xl shadow-black/20">
+                {(Object.keys(localeNames) as Locale[]).map((lang) => (
+                  <button
+                    key={lang}
+                    onClick={() => {
+                      setLocale(lang);
+                      setLangOpen(false);
+                    }}
+                    className={`flex w-full items-center gap-2.5 px-3 py-2 text-left text-sm transition-colors hover:bg-input-bg ${
+                      locale === lang ? "text-accent font-semibold" : "text-foreground"
+                    }`}
+                  >
+                    <span className="w-6 text-center text-xs font-bold text-muted">
+                      {langFlag[lang]}
+                    </span>
+                    {localeNames[lang]}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Theme Toggle */}
           <button
             onClick={toggleTheme}
             className="flex h-9 w-9 items-center justify-center rounded-lg border border-input-border text-muted transition-colors hover:border-accent hover:text-accent"
-            aria-label={isLight ? "Switch to dark theme" : "Switch to light theme"}
-            title={isLight ? "Switch to dark theme" : "Switch to light theme"}
+            aria-label={isLight ? t("switch_dark") : t("switch_light")}
+            title={isLight ? t("switch_dark") : t("switch_light")}
           >
             {isLight ? (
               <Moon className="h-4 w-4" />
@@ -93,16 +150,48 @@ export default function Header() {
             )}
           </button>
           <button className="rounded-full bg-accent px-4 py-2 text-sm font-semibold text-background transition-colors hover:bg-accent-hover">
-            Export Data
+            {t("export_data")}
           </button>
         </div>
 
         {/* Mobile menu button */}
         <div className="flex items-center gap-2 md:hidden">
+          {/* Mobile Language */}
+          <div className="relative" ref={langRef}>
+            <button
+              onClick={() => setLangOpen(!langOpen)}
+              className="flex h-9 items-center gap-1 rounded-lg border border-input-border px-2 text-muted transition-colors hover:border-accent hover:text-accent"
+            >
+              <Globe className="h-3.5 w-3.5" />
+              <span className="text-[10px] font-bold">{langFlag[locale]}</span>
+            </button>
+            {langOpen && (
+              <div className="absolute end-0 top-full z-50 mt-1 w-36 rounded-xl border border-card-border bg-card-bg py-1 shadow-xl shadow-black/20">
+                {(Object.keys(localeNames) as Locale[]).map((lang) => (
+                  <button
+                    key={lang}
+                    onClick={() => {
+                      setLocale(lang);
+                      setLangOpen(false);
+                    }}
+                    className={`flex w-full items-center gap-2.5 px-3 py-2 text-left text-sm transition-colors hover:bg-input-bg ${
+                      locale === lang ? "text-accent font-semibold" : "text-foreground"
+                    }`}
+                  >
+                    <span className="w-6 text-center text-xs font-bold text-muted">
+                      {langFlag[lang]}
+                    </span>
+                    {localeNames[lang]}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+
           <button
             onClick={toggleTheme}
             className="flex h-9 w-9 items-center justify-center rounded-lg border border-input-border text-muted transition-colors hover:border-accent hover:text-accent"
-            aria-label={isLight ? "Switch to dark theme" : "Switch to light theme"}
+            aria-label={isLight ? t("switch_dark") : t("switch_light")}
           >
             {isLight ? (
               <Moon className="h-4 w-4" />

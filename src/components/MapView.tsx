@@ -3,6 +3,7 @@
 import { useEffect, useRef, useMemo } from "react";
 import { Transaction } from "@/data/abu-dhabi";
 import { formatAED, formatNumber } from "@/lib/filters";
+import { useT } from "@/i18n/LanguageContext";
 
 interface MapViewProps {
   data: Transaction[];
@@ -32,6 +33,7 @@ const districtCoords: Record<string, [number, number]> = {
 };
 
 export default function MapView({ data }: MapViewProps) {
+  const t = useT();
   const mapContainer = useRef<HTMLDivElement>(null);
   const mapRef = useRef<maplibregl.Map | null>(null);
 
@@ -144,9 +146,9 @@ export default function MapView({ data }: MapViewProps) {
             <div style="background:#222d30;color:#f1decb;padding:12px;border-radius:8px;font-family:system-ui;border:1px solid #374144;">
               <div style="font-size:14px;font-weight:700;color:#c4a04e;margin-bottom:6px;">${district}</div>
               <div style="font-size:12px;color:#b0aca7;line-height:1.7;">
-                <div><b>${formatNumber(stat.count)}</b> transactions</div>
-                <div>Total: <b>${formatAED(stat.totalValue)}</b></div>
-                <div>Avg: <b>AED ${formatNumber(avgRate)}</b>/sqft</div>
+                <div><b>${formatNumber(stat.count)}</b> ${t("transactions_label")}</div>
+                <div>${t("total_label")} <b>${formatAED(stat.totalValue)}</b></div>
+                <div>${t("avg_label")} <b>AED ${formatNumber(avgRate)}</b>/sqft</div>
               </div>
             </div>
           `);
@@ -165,7 +167,7 @@ export default function MapView({ data }: MapViewProps) {
       mapRef.current?.remove();
       mapRef.current = null;
     };
-  }, [districtStats]);
+  }, [districtStats, t]);
 
   return (
     <div
@@ -174,10 +176,10 @@ export default function MapView({ data }: MapViewProps) {
     >
       <div className="border-b border-card-border px-5 py-4">
         <h2 className="text-sm font-semibold text-foreground">
-          Abu Dhabi Real Estate Map
+          {t("map_title")}
         </h2>
         <p className="text-xs text-muted">
-          Transaction hotspots by district - click markers for details
+          {t("map_subtitle")}
         </p>
       </div>
       <div ref={mapContainer} className="h-[450px] w-full" />

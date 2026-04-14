@@ -10,6 +10,7 @@ import {
   ChevronUp,
   Building2,
 } from "lucide-react";
+import { useT } from "@/i18n/LanguageContext";
 
 interface PriceHistoryProps {
   data: Transaction[];
@@ -42,6 +43,7 @@ function getQuarterLabel(date: string): { label: string; sortKey: string } {
 }
 
 export default function PriceHistory({ data }: PriceHistoryProps) {
+  const t = useT();
   const [expandedProject, setExpandedProject] = useState<string | null>(null);
   const [showAll, setShowAll] = useState(false);
 
@@ -164,12 +166,12 @@ export default function PriceHistory({ data }: PriceHistoryProps) {
           </div>
           <div>
             <h2 className="text-sm font-semibold text-foreground">
-              Project Price Trends
+              {t("price_trends")}
             </h2>
             <p className="text-xs text-muted">
-              Average rate per sqft trends for top projects
+              {t("price_trends_subtitle")}
               {" "}&bull;{" "}
-              {formatNumber(projectTrends.length)} projects tracked
+              {formatNumber(projectTrends.length)} {t("projects_tracked")}
             </p>
           </div>
         </div>
@@ -187,7 +189,7 @@ export default function PriceHistory({ data }: PriceHistoryProps) {
                 onClick={() =>
                   setExpandedProject(isExpanded ? null : trend.projectId)
                 }
-                className="flex w-full items-center gap-4 px-5 py-3.5 text-left transition-colors hover:bg-input-bg/30"
+                className="flex w-full items-center gap-4 px-5 py-3.5 text-start transition-colors hover:bg-input-bg/30"
               >
                 {/* Trend badge */}
                 <div
@@ -205,7 +207,7 @@ export default function PriceHistory({ data }: PriceHistoryProps) {
                       trend.trendPositive ? "text-positive" : "text-negative"
                     }`}
                   >
-                    {trend.trendPositive ? "UP" : "DOWN"}
+                    {trend.trendPositive ? t("up") : t("down")}
                   </span>
                 </div>
 
@@ -219,13 +221,13 @@ export default function PriceHistory({ data }: PriceHistoryProps) {
                   </div>
                   <p className="mt-0.5 text-xs text-muted">
                     {trend.district} &bull; {formatNumber(trend.totalCount)}{" "}
-                    transactions &bull; {trend.quarters.length} quarters
+                    {t("transactions_label")} &bull; {trend.quarters.length} {t("quarters_label")}
                   </p>
                 </div>
 
                 {/* Latest rate */}
-                <div className="hidden text-right sm:block">
-                  <p className="text-xs text-muted">Latest Avg Rate</p>
+                <div className="hidden text-end sm:block">
+                  <p className="text-xs text-muted">{t("latest_avg_rate")}</p>
                   <p className="text-sm font-semibold text-foreground">
                     AED {formatNumber(trend.latestAvgRate)}/sqft
                   </p>
@@ -248,11 +250,11 @@ export default function PriceHistory({ data }: PriceHistoryProps) {
                     <table className="w-full">
                       <thead>
                         <tr className="text-[11px] font-semibold uppercase tracking-wider text-muted">
-                          <th className="pb-2 text-left">Quarter</th>
-                          <th className="pb-2 text-right">Transactions</th>
-                          <th className="pb-2 text-right">Avg Price</th>
-                          <th className="pb-2 text-right">Avg Rate/sqft</th>
-                          <th className="pb-2 text-right">Change</th>
+                          <th className="pb-2 text-start">{t("quarter")}</th>
+                          <th className="pb-2 text-end">{t("transactions_label")}</th>
+                          <th className="pb-2 text-end">{t("avg_price")}</th>
+                          <th className="pb-2 text-end">{t("avg_rate_sqft")}</th>
+                          <th className="pb-2 text-end">{t("change")}</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -264,16 +266,16 @@ export default function PriceHistory({ data }: PriceHistoryProps) {
                             <td className="py-2 font-medium text-foreground">
                               {q.label}
                             </td>
-                            <td className="py-2 text-right text-muted">
+                            <td className="py-2 text-end text-muted">
                               {formatNumber(q.count)}
                             </td>
-                            <td className="py-2 text-right font-semibold text-foreground">
+                            <td className="py-2 text-end font-semibold text-foreground">
                               {formatAED(q.avgPrice)}
                             </td>
-                            <td className="py-2 text-right text-muted">
+                            <td className="py-2 text-end text-muted">
                               AED {formatNumber(q.avgRate)}
                             </td>
-                            <td className="py-2 text-right">
+                            <td className="py-2 text-end">
                               {q.changePct !== null ? (
                                 <span
                                   className={`text-xs font-bold ${
@@ -309,8 +311,8 @@ export default function PriceHistory({ data }: PriceHistoryProps) {
             className="text-xs font-semibold text-accent hover:underline"
           >
             {showAll
-              ? "Show Less"
-              : `Show All ${formatNumber(projectTrends.length)} Projects`}
+              ? t("show_less")
+              : t("show_all_projects", formatNumber(projectTrends.length))}
           </button>
         </div>
       )}

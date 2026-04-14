@@ -10,14 +10,18 @@ import Charts from "@/components/Charts";
 import TrendyProjects from "@/components/TrendyProjects";
 import MapView from "@/components/MapView";
 import PriceHistory from "@/components/PriceHistory";
+import ContactSection from "@/components/ContactSection";
+import ChatWidget from "@/components/ChatWidget";
 import {
   Transaction,
   Hierarchy,
   decodeTransactions,
 } from "@/data/abu-dhabi";
 import { FilterState, defaultFilters, applyFilters } from "@/lib/filters";
+import { LanguageProvider, useT } from "@/i18n/LanguageContext";
 
-export default function Dashboard() {
+function DashboardContent() {
+  const t = useT();
   const [allData, setAllData] = useState<Transaction[]>([]);
   const [hierarchy, setHierarchy] = useState<Hierarchy | null>(null);
   const [loading, setLoading] = useState(true);
@@ -75,7 +79,7 @@ export default function Dashboard() {
         <Header />
         <div className="flex min-h-[60vh] flex-col items-center justify-center gap-4">
           <div className="h-12 w-12 animate-spin rounded-full border-4 border-accent/20 border-t-accent" />
-          <p className="text-sm text-muted">Loading ADREC transaction data...</p>
+          <p className="text-sm text-muted">{t("loading_text")}</p>
         </div>
       </>
     );
@@ -93,7 +97,7 @@ export default function Dashboard() {
             onClick={() => window.location.reload()}
             className="rounded-lg bg-accent px-4 py-2 text-sm font-medium text-background hover:bg-accent-hover"
           >
-            Retry
+            {t("retry")}
           </button>
         </div>
       </>
@@ -107,10 +111,10 @@ export default function Dashboard() {
         {/* Hero */}
         <div className="mb-6" id="dashboard">
           <h1 className="text-2xl font-bold tracking-tight text-foreground">
-            Abu Dhabi Real Estate Market
+            {t("hero_title")}
           </h1>
           <p className="mt-1 text-sm text-muted">
-            Live transaction data, trends, and analytics powered by ADREC
+            {t("hero_subtitle")}
           </p>
         </div>
 
@@ -143,23 +147,36 @@ export default function Dashboard() {
 
           {/* Transaction Table */}
           <TransactionTable data={filtered} />
+
+          {/* Contact Section */}
+          <ContactSection />
         </div>
 
         {/* Footer */}
         <footer className="mt-12 border-t border-card-border py-8 text-center">
-          <p className="text-sm font-semibold text-accent">DEMO</p>
+          <p className="text-sm font-semibold text-accent">{t("demo")}</p>
           <p className="mt-2 text-xs text-foreground">
-            Created by <span className="font-bold">Sand Square Group</span>
+            {t("created_by")} <span className="font-bold">{t("brand_name")}</span>
           </p>
           <p className="mt-1 text-xs text-muted">
-            ADXBInteract &mdash; Abu Dhabi Real Estate Intelligence Platform
+            {t("platform_name")}
           </p>
           <p className="mt-1 text-xs text-muted">
-            Data sourced from ADREC (Abu Dhabi Real Estate Centre) &bull; For
-            informational purposes only
+            {t("data_source")}
           </p>
         </footer>
       </main>
+
+      {/* Floating Chat Widget */}
+      <ChatWidget />
     </>
+  );
+}
+
+export default function Dashboard() {
+  return (
+    <LanguageProvider>
+      <DashboardContent />
+    </LanguageProvider>
   );
 }

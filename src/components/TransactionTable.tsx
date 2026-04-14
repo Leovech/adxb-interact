@@ -10,6 +10,7 @@ import {
   ChevronRight,
 } from "lucide-react";
 import { useState, useMemo } from "react";
+import { useT } from "@/i18n/LanguageContext";
 
 interface TransactionTableProps {
   data: Transaction[];
@@ -49,6 +50,7 @@ function formatBedrooms(beds: number): string {
 }
 
 export default function TransactionTable({ data }: TransactionTableProps) {
+  const t = useT();
   const [sortField, setSortField] = useState<SortField>("date");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
   const [page, setPage] = useState(0);
@@ -95,19 +97,19 @@ export default function TransactionTable({ data }: TransactionTableProps) {
 
   const SortIcon = ({ field }: { field: SortField }) => {
     if (sortField !== field)
-      return <ArrowUpDown className="ml-1 inline h-3 w-3 text-muted/50" />;
+      return <ArrowUpDown className="ms-1 inline h-3 w-3 text-muted/50" />;
     return sortDir === "asc" ? (
-      <ArrowUp className="ml-1 inline h-3 w-3 text-accent" />
+      <ArrowUp className="ms-1 inline h-3 w-3 text-accent" />
     ) : (
-      <ArrowDown className="ml-1 inline h-3 w-3 text-accent" />
+      <ArrowDown className="ms-1 inline h-3 w-3 text-accent" />
     );
   };
 
   const colClass =
-    "cursor-pointer select-none whitespace-nowrap px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted hover:text-accent transition-colors";
+    "cursor-pointer select-none whitespace-nowrap px-4 py-3 text-start text-xs font-semibold uppercase tracking-wider text-muted hover:text-accent transition-colors";
 
   const staticColClass =
-    "whitespace-nowrap px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted";
+    "whitespace-nowrap px-4 py-3 text-start text-xs font-semibold uppercase tracking-wider text-muted";
 
   // Page number range (show 5 at a time)
   const pageNumbers = useMemo(() => {
@@ -138,10 +140,10 @@ export default function TransactionTable({ data }: TransactionTableProps) {
     >
       <div className="border-b border-card-border px-5 py-4">
         <h2 className="text-sm font-semibold text-foreground">
-          Transaction Details
+          {t("transaction_details")}
         </h2>
         <p className="text-xs text-muted">
-          Showing {paged.length} of {data.length.toLocaleString()} transactions
+          {t("showing_of", paged.length.toString(), data.length.toLocaleString())}
         </p>
       </div>
 
@@ -150,36 +152,36 @@ export default function TransactionTable({ data }: TransactionTableProps) {
           <thead>
             <tr className="border-b border-card-border bg-input-bg/50">
               <th className={colClass} onClick={() => handleSort("date")}>
-                Date
+                {t("date")}
                 <SortIcon field="date" />
               </th>
               <th className={colClass} onClick={() => handleSort("district")}>
-                District
+                {t("district")}
                 <SortIcon field="district" />
               </th>
               <th className={colClass} onClick={() => handleSort("project")}>
-                Project
+                {t("project")}
                 <SortIcon field="project" />
               </th>
-              <th className={staticColClass}>Type</th>
-              <th className={staticColClass}>Beds</th>
+              <th className={staticColClass}>{t("type")}</th>
+              <th className={staticColClass}>{t("beds")}</th>
               <th className={colClass} onClick={() => handleSort("sizeSqft")}>
-                Size sqft
+                {t("size_sqft_header")}
                 <SortIcon field="sizeSqft" />
               </th>
               <th className={colClass} onClick={() => handleSort("price")}>
-                Price AED
+                {t("price_aed_header")}
                 <SortIcon field="price" />
               </th>
               <th
                 className={colClass}
                 onClick={() => handleSort("ratePerSqft")}
               >
-                Rate/sqft
+                {t("rate_sqft")}
                 <SortIcon field="ratePerSqft" />
               </th>
-              <th className={staticColClass}>Status</th>
-              <th className={staticColClass}>Sale</th>
+              <th className={staticColClass}>{t("status")}</th>
+              <th className={staticColClass}>{t("sale")}</th>
             </tr>
           </thead>
           <tbody>
@@ -207,13 +209,13 @@ export default function TransactionTable({ data }: TransactionTableProps) {
                 <td className="whitespace-nowrap px-4 py-3 text-center text-sm text-foreground">
                   {formatBedrooms(tx.bedrooms)}
                 </td>
-                <td className="whitespace-nowrap px-4 py-3 text-right text-sm text-foreground">
+                <td className="whitespace-nowrap px-4 py-3 text-end text-sm text-foreground">
                   {formatNumber(tx.sizeSqft)}
                 </td>
-                <td className="whitespace-nowrap px-4 py-3 text-right text-sm font-semibold text-foreground">
+                <td className="whitespace-nowrap px-4 py-3 text-end text-sm font-semibold text-foreground">
                   {formatAED(tx.price)}
                 </td>
-                <td className="whitespace-nowrap px-4 py-3 text-right text-sm text-muted">
+                <td className="whitespace-nowrap px-4 py-3 text-end text-sm text-muted">
                   {formatNumber(tx.ratePerSqft)}
                 </td>
                 <td className="whitespace-nowrap px-4 py-3">
@@ -251,7 +253,7 @@ export default function TransactionTable({ data }: TransactionTableProps) {
       {/* Pagination */}
       <div className="flex items-center justify-between border-t border-card-border px-5 py-3">
         <p className="text-xs text-muted">
-          Page {page + 1} of {totalPages}
+          {t("page_of", String(page + 1), String(totalPages))}
         </p>
         <div className="flex gap-1">
           <button

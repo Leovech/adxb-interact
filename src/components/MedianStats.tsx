@@ -3,6 +3,7 @@
 import { Transaction } from "@/data/abu-dhabi";
 import { formatAED, formatNumber, FilterState } from "@/lib/filters";
 import { BarChart3, TrendingUp, Ruler, Repeat } from "lucide-react";
+import { useT } from "@/i18n/LanguageContext";
 
 interface MedianStatsProps {
   data: Transaction[];
@@ -17,55 +18,57 @@ function median(values: number[]): number {
 }
 
 export default function MedianStats({ data, filters }: MedianStatsProps) {
+  const t = useT();
+
   if (data.length === 0) return null;
 
   const locationLabel = filters.project
     ? filters.project
     : filters.district
     ? filters.district
-    : "All Abu Dhabi";
+    : t("all_abu_dhabi");
 
-  const medianSalePrice = median(data.map((t) => t.price));
-  const ratesWithValue = data.filter((t) => t.ratePerSqft > 0);
-  const medianRate = median(ratesWithValue.map((t) => t.ratePerSqft));
+  const medianSalePrice = median(data.map((tx) => tx.price));
+  const ratesWithValue = data.filter((tx) => tx.ratePerSqft > 0);
+  const medianRate = median(ratesWithValue.map((tx) => tx.ratePerSqft));
   const avgRate =
     ratesWithValue.length > 0
       ? Math.round(
-          ratesWithValue.reduce((s, t) => s + t.ratePerSqft, 0) /
+          ratesWithValue.reduce((s, tx) => s + tx.ratePerSqft, 0) /
             ratesWithValue.length
         )
       : 0;
-  const sizesWithValue = data.filter((t) => t.sizeSqft > 0);
-  const medianSize = median(sizesWithValue.map((t) => t.sizeSqft));
+  const sizesWithValue = data.filter((tx) => tx.sizeSqft > 0);
+  const medianSize = median(sizesWithValue.map((tx) => tx.sizeSqft));
 
-  const primaryCount = data.filter((t) => t.sequence === "Primary").length;
+  const primaryCount = data.filter((tx) => tx.sequence === "Primary").length;
   const primaryPct =
     data.length > 0 ? Math.round((primaryCount / data.length) * 100) : 0;
   const secondaryPct = data.length > 0 ? 100 - primaryPct : 0;
 
   const stats = [
     {
-      label: "Median Sale Price",
+      label: t("median_sale_price"),
       value: medianSalePrice > 0 ? formatAED(medianSalePrice) : "N/A",
-      sub: `${formatNumber(data.length)} transactions`,
+      sub: `${formatNumber(data.length)} ${t("total_transactions_label")}`,
       icon: BarChart3,
     },
     {
-      label: "Median AED/sqft",
+      label: t("median_aed_sqft"),
       value: medianRate > 0 ? `AED ${formatNumber(medianRate)}` : "N/A",
-      sub: `Avg: AED ${formatNumber(avgRate)}`,
+      sub: `${t("avg_label")} AED ${formatNumber(avgRate)}`,
       icon: TrendingUp,
     },
     {
-      label: "Median Size",
+      label: t("median_size"),
       value: medianSize > 0 ? `${formatNumber(medianSize)} sqft` : "N/A",
-      sub: `${formatNumber(data.length)} total transactions`,
+      sub: `${formatNumber(data.length)} ${t("total_transactions_label")}`,
       icon: Ruler,
     },
     {
-      label: "Primary vs Secondary",
-      value: `${primaryPct}% Primary`,
-      sub: `${formatNumber(primaryCount)} first sales, ${secondaryPct}% resale`,
+      label: t("primary_vs_secondary"),
+      value: `${primaryPct}% ${t("primary_pct")}`,
+      sub: `${formatNumber(primaryCount)} ${t("first_sales")}, ${secondaryPct}% ${t("resale_pct")}`,
       icon: Repeat,
     },
   ];
@@ -74,7 +77,7 @@ export default function MedianStats({ data, filters }: MedianStatsProps) {
     <div className="rounded-xl border border-card-border bg-card-bg">
       <div className="border-b border-card-border px-5 py-3">
         <h3 className="text-sm font-semibold text-foreground">
-          Market Stats: <span className="text-accent">{locationLabel}</span>
+          {t("market_stats")} <span className="text-accent">{locationLabel}</span>
         </h3>
       </div>
       <div className="grid grid-cols-2 gap-px bg-card-border lg:grid-cols-4">

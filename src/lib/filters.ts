@@ -66,7 +66,7 @@ export const defaultFilters: FilterState = {
   sizeMax: "",
   rateMin: "",
   rateMax: "",
-  datePreset: "this_year",
+  datePreset: "all_time",
   dateFrom: "",
   dateTo: "",
 };

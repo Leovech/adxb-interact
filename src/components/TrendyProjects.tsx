@@ -10,18 +10,13 @@ import {
   ChevronDown,
   ChevronUp,
 } from "lucide-react";
+import { useT } from "@/i18n/LanguageContext";
 
 interface TrendyProjectsProps {
   data: Transaction[];
 }
 
 type TrendCategory = "sale_ready" | "sale_offplan" | "primary";
-
-const categoryLabels: Record<TrendCategory, string> = {
-  sale_ready: "Sale - Ready",
-  sale_offplan: "Sale - Off-Plan",
-  primary: "Primary Sales",
-};
 
 const categoryColors: Record<TrendCategory, string> = {
   sale_ready: "#c4a04e",
@@ -55,8 +50,15 @@ function filterByCategory(
 }
 
 export default function TrendyProjects({ data }: TrendyProjectsProps) {
+  const t = useT();
   const [category, setCategory] = useState<TrendCategory>("sale_ready");
   const [showAll, setShowAll] = useState(false);
+
+  const categoryLabels: Record<TrendCategory, string> = {
+    sale_ready: t("sale_ready"),
+    sale_offplan: t("sale_offplan"),
+    primary: t("primary_sales"),
+  };
 
   const monthlyRankings = useMemo(() => {
     const categoryData = filterByCategory(data, category);
@@ -169,10 +171,10 @@ export default function TrendyProjects({ data }: TrendyProjectsProps) {
           </div>
           <div>
             <h2 className="text-sm font-semibold text-foreground">
-              Trendy Projects
+              {t("trendy_projects")}
             </h2>
             <p className="text-xs text-muted">
-              Most active projects by transaction volume per month
+              {t("trendy_subtitle")}
             </p>
           </div>
         </div>
@@ -200,10 +202,10 @@ export default function TrendyProjects({ data }: TrendyProjectsProps) {
 
       <div className="grid grid-cols-1 gap-0 lg:grid-cols-3">
         {/* Overall Leaderboard */}
-        <div className="border-b border-card-border p-5 lg:border-b-0 lg:border-r">
+        <div className="border-b border-card-border p-5 lg:border-b-0 lg:border-e">
           <h3 className="mb-3 flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-muted">
             <Award className="h-3.5 w-3.5" />
-            Overall Top Projects ({categoryLabels[category]})
+            {t("overall_top")} ({categoryLabels[category]})
           </h3>
           <div className="space-y-2">
             {overallTop.map((p) => (
@@ -228,20 +230,20 @@ export default function TrendyProjects({ data }: TrendyProjectsProps) {
                     {p.district}
                   </p>
                 </div>
-                <div className="text-right">
+                <div className="text-end">
                   <p className="text-xs font-semibold text-accent">
                     {formatNumber(p.totalTx)}
                   </p>
                   <p className="text-[10px] text-muted">
                     {p.activeMonths}{" "}
-                    {p.activeMonths === 1 ? "month" : "months"}
+                    {p.activeMonths === 1 ? t("month_label") : t("months_label")}
                   </p>
                 </div>
               </div>
             ))}
             {overallTop.length === 0 && (
               <p className="py-4 text-center text-xs text-muted">
-                No transactions in this category
+                {t("no_transactions_category")}
               </p>
             )}
           </div>
@@ -251,7 +253,7 @@ export default function TrendyProjects({ data }: TrendyProjectsProps) {
         <div className="col-span-2 p-5">
           <h3 className="mb-3 flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-muted">
             <TrendingUp className="h-3.5 w-3.5" />
-            Monthly Breakdown
+            {t("monthly_breakdown")}
           </h3>
 
           <div className="space-y-3">
@@ -265,7 +267,7 @@ export default function TrendyProjects({ data }: TrendyProjectsProps) {
                     {month.monthLabel}
                   </span>
                   <span className="text-[10px] text-muted">
-                    Top {month.projects.length} projects
+                    {t("top_projects", month.projects.length.toString())}
                   </span>
                 </div>
 
@@ -292,7 +294,7 @@ export default function TrendyProjects({ data }: TrendyProjectsProps) {
                           <div className="flex items-center justify-between gap-2">
                             <span className="truncate text-xs text-foreground">
                               {proj.project}
-                              <span className="ml-1 text-[10px] text-muted">
+                              <span className="ms-1 text-[10px] text-muted">
                                 ({proj.district})
                               </span>
                             </span>
@@ -323,7 +325,7 @@ export default function TrendyProjects({ data }: TrendyProjectsProps) {
 
             {monthlyRankings.length === 0 && (
               <p className="py-8 text-center text-xs text-muted">
-                No transactions in this category for the selected period
+                {t("no_transactions_period")}
               </p>
             )}
           </div>
@@ -336,11 +338,11 @@ export default function TrendyProjects({ data }: TrendyProjectsProps) {
             >
               {showAll ? (
                 <>
-                  Show Less <ChevronUp className="h-3 w-3" />
+                  {t("show_less")} <ChevronUp className="h-3 w-3" />
                 </>
               ) : (
                 <>
-                  Show All {monthlyRankings.length} Months{" "}
+                  {t("show_all_months", monthlyRankings.length.toString())}{" "}
                   <ChevronDown className="h-3 w-3" />
                 </>
               )}

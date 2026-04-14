@@ -4,6 +4,7 @@ import { Transaction } from "@/data/abu-dhabi";
 import { formatAED, formatNumber } from "@/lib/filters";
 import { useState, useMemo } from "react";
 import { BarChart3, DollarSign, TrendingUp, Building2 } from "lucide-react";
+import { useT } from "@/i18n/LanguageContext";
 
 interface KPICardsProps {
   filtered: Transaction[];
@@ -20,21 +21,22 @@ function median(values: number[]): number {
   return sorted.length % 2 ? sorted[mid] : (sorted[mid - 1] + sorted[mid]) / 2;
 }
 
-const sequenceOptions: { value: SequenceSegment; label: string }[] = [
-  { value: "all", label: "All" },
-  { value: "primary", label: "Primary" },
-  { value: "secondary", label: "Secondary" },
-];
-
-const statusOptions: { value: StatusSegment; label: string }[] = [
-  { value: "all", label: "All" },
-  { value: "ready", label: "Ready" },
-  { value: "offplan", label: "Off-Plan" },
-];
-
 export default function KPICards({ filtered, total }: KPICardsProps) {
+  const t = useT();
   const [seqSegment, setSeqSegment] = useState<SequenceSegment>("all");
   const [statusSegment, setStatusSegment] = useState<StatusSegment>("all");
+
+  const sequenceOptions: { value: SequenceSegment; label: string }[] = [
+    { value: "all", label: t("all") },
+    { value: "primary", label: t("primary") },
+    { value: "secondary", label: t("secondary") },
+  ];
+
+  const statusOptions: { value: StatusSegment; label: string }[] = [
+    { value: "all", label: t("all") },
+    { value: "ready", label: t("ready") },
+    { value: "offplan", label: t("off_plan") },
+  ];
 
   const segmented = useMemo(() => {
     let data = filtered;
@@ -54,64 +56,64 @@ export default function KPICards({ filtered, total }: KPICardsProps) {
   const readyDeals = segmented.filter((t) => t.status === "Ready");
   const offplanDeals = segmented.filter((t) => t.status === "Off-Plan");
 
-  const totalValue = segmented.reduce((sum, t) => sum + t.price, 0);
-  const medianPrice = median(segmented.map((t) => t.price));
+  const totalValue = segmented.reduce((sum, tx) => sum + tx.price, 0);
+  const medianPrice = median(segmented.map((tx) => tx.price));
   const medianRate = median(
-    segmented.filter((t) => t.ratePerSqft > 0).map((t) => t.ratePerSqft)
+    segmented.filter((tx) => tx.ratePerSqft > 0).map((tx) => tx.ratePerSqft)
   );
   const avgSize =
     segmented.length > 0
       ? Math.round(
-          segmented.reduce((sum, t) => sum + t.sizeSqft, 0) / segmented.length
+          segmented.reduce((sum, tx) => sum + tx.sizeSqft, 0) / segmented.length
         )
       : 0;
 
   const seqLabel =
     seqSegment === "primary"
-      ? "Primary"
+      ? t("primary")
       : seqSegment === "secondary"
-      ? "Secondary"
+      ? t("secondary")
       : "";
   const statusLabel =
     statusSegment === "ready"
-      ? "Ready"
+      ? t("ready")
       : statusSegment === "offplan"
-      ? "Off-Plan"
+      ? t("off_plan")
       : "";
   const combinedLabel =
-    [statusLabel, seqLabel].filter(Boolean).join(" ") || "All";
+    [statusLabel, seqLabel].filter(Boolean).join(" ") || t("all");
 
   const cards = [
     {
-      title: "Total Transactions",
+      title: t("total_transactions"),
       value: formatNumber(segmented.length),
       subtitle:
         seqSegment === "all"
-          ? `${formatNumber(primaryDeals.length)} primary, ${formatNumber(secondaryDeals.length)} secondary`
+          ? `${formatNumber(primaryDeals.length)} ${t("primary_label")}, ${formatNumber(secondaryDeals.length)} ${t("secondary_label")}`
           : statusSegment === "all"
-          ? `${formatNumber(readyDeals.length)} ready, ${formatNumber(offplanDeals.length)} off-plan`
-          : `of ${formatNumber(filtered.length)} total filtered`,
+          ? `${formatNumber(readyDeals.length)} ${t("ready_label")}, ${formatNumber(offplanDeals.length)} ${t("off_plan_label")}`
+          : t("of_total_filtered", formatNumber(filtered.length)),
       icon: BarChart3,
     },
     {
-      title: "Total Value",
+      title: t("total_value"),
       value: formatAED(totalValue),
-      subtitle: `Off-plan: ${formatAED(offplanDeals.reduce((s, t) => s + t.price, 0))} | Ready: ${formatAED(readyDeals.reduce((s, t) => s + t.price, 0))}`,
+      subtitle: `${t("off_plan_label")}: ${formatAED(offplanDeals.reduce((s, tx) => s + tx.price, 0))} | ${t("ready_label")}: ${formatAED(readyDeals.reduce((s, tx) => s + tx.price, 0))}`,
       icon: DollarSign,
     },
     {
-      title: "Median Price",
+      title: t("median_price"),
       value: formatAED(medianPrice),
-      subtitle: `Median rate: ${medianRate > 0 ? formatNumber(medianRate) : "N/A"} AED/sqft`,
+      subtitle: `${t("median_aed_sqft")}: ${medianRate > 0 ? formatNumber(medianRate) : "N/A"}`,
       icon: TrendingUp,
     },
     {
-      title: "Avg Size",
+      title: t("avg_size"),
       value: `${formatNumber(avgSize)} sqft`,
       subtitle:
         statusSegment === "all"
-          ? `${formatNumber(offplanDeals.length)} off-plan, ${formatNumber(readyDeals.length)} ready`
-          : `${formatNumber(segmented.length)} ${combinedLabel} transactions`,
+          ? `${formatNumber(offplanDeals.length)} ${t("off_plan_label")}, ${formatNumber(readyDeals.length)} ${t("ready_label")}`
+          : `${formatNumber(segmented.length)} ${combinedLabel} ${t("transactions_label")}`,
       icon: Building2,
     },
   ];
@@ -122,7 +124,7 @@ export default function KPICards({ filtered, total }: KPICardsProps) {
       <div className="mb-4 flex flex-wrap items-center gap-4 rounded-xl border border-card-border bg-card-bg px-4 py-3">
         <div className="flex items-center gap-2">
           <span className="text-[11px] font-semibold uppercase tracking-wider text-muted">
-            View:
+            {t("view")}
           </span>
           <div className="flex gap-1">
             {sequenceOptions.map((opt) => (
@@ -143,7 +145,7 @@ export default function KPICards({ filtered, total }: KPICardsProps) {
         <div className="h-5 w-px bg-card-border" />
         <div className="flex items-center gap-2">
           <span className="text-[11px] font-semibold uppercase tracking-wider text-muted">
-            Status:
+            {t("status")}:
           </span>
           <div className="flex gap-1">
             {statusOptions.map((opt) => (
@@ -162,8 +164,8 @@ export default function KPICards({ filtered, total }: KPICardsProps) {
           </div>
         </div>
         {(seqSegment !== "all" || statusSegment !== "all") && (
-          <span className="ml-auto text-xs font-semibold text-accent">
-            Showing: {combinedLabel}
+          <span className="ms-auto text-xs font-semibold text-accent">
+            {t("showing")} {combinedLabel}
           </span>
         )}
       </div>
@@ -175,7 +177,7 @@ export default function KPICards({ filtered, total }: KPICardsProps) {
             key={card.title}
             className={`animate-fade-in stagger-${i + 1} group relative overflow-hidden rounded-xl border border-card-border bg-card-bg p-5 transition-all hover:border-accent/30`}
           >
-            <div className="absolute right-3 top-3 rounded-lg bg-accent/10 p-2">
+            <div className="absolute end-3 top-3 rounded-lg bg-accent/10 p-2">
               <card.icon className="h-4 w-4 text-accent" />
             </div>
             <p className="text-xs font-medium uppercase tracking-wider text-muted">
