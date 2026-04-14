@@ -151,16 +151,20 @@ for (let i = 1; i < rows.length; i++) {
   // Validate date
   if (!date || !date.match(/^\d{4}-\d{2}-\d{2}$/)) { skipped++; continue; }
 
-  const sizeSqm = parseFloat(soldAreaStr) || 0;
+  const soldArea = parseFloat(soldAreaStr) || 0;
+  const landArea = parseFloat(landAreaStr) || 0;
   const price = parseFloat(priceStr) || 0;
   const rateSqm = parseFloat(rateStr) || 0;
   const share = parseFloat(shareStr) || 1;
 
-  // Skip zero-price or zero-size
-  if (price <= 0 || sizeSqm <= 0) { skipped++; continue; }
+  // Use sold area, fall back to land area for plots/villas
+  const sizeSqm = soldArea > 0 ? soldArea : landArea;
 
-  const sizeSqft = Math.round(sizeSqm * 10.7639);
-  const rateSqft = Math.round(rateSqm / 10.7639);
+  // Skip only zero-price rows (keep zero-size as they may be valid)
+  if (price <= 0) { skipped++; continue; }
+
+  const sizeSqft = sizeSqm > 0 ? Math.round(sizeSqm * 10.7639) : 0;
+  const rateSqft = rateSqm > 0 ? Math.round(rateSqm / 10.7639) : (sizeSqft > 0 ? Math.round(price / sizeSqft) : 0);
 
   const propertyType = mapPropertyType(rawPropertyType);
   const status = mapStatus(saleAppType);

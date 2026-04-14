@@ -130,7 +130,7 @@ export default function FilterPanel({
   }, []);
 
   const sortedDistricts = useMemo(
-    () => [...hierarchy.districts].sort((a, b) => b.count - a.count),
+    () => [...hierarchy.districts].sort((a, b) => a.name.localeCompare(b.name)),
     [hierarchy.districts]
   );
 
@@ -138,7 +138,7 @@ export default function FilterPanel({
     () =>
       filters.district
         ? getProjectsForDistrict(hierarchy, filters.district).sort(
-            (a, b) => b.count - a.count
+            (a, b) => a.name.localeCompare(b.name)
           )
         : [],
     [hierarchy, filters.district]
