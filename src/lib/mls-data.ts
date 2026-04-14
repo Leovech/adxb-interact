@@ -122,14 +122,20 @@ function buildListingUrl(
   district: string,
   bedrooms: number
 ): string {
-  // Deep-link to the platform's search page — users can verify live listings.
+  // Deep-link to each platform's search results so the user can verify live
+  // listings against our sample. URLs use the documented query params these
+  // platforms expose on their search pages.
   if (platform === "propertyfinder") {
-    const q = encodeURIComponent(`${project} ${district} Abu Dhabi`);
-    return `https://www.propertyfinder.ae/en/search?c=1&q=${q}&rp=y&rb=${bedrooms}`;
+    // Property Finder: c=1 sale, t=1 residential, q=free-text, bf/bt=bedrooms
+    const q = encodeURIComponent(`${project} ${district}`);
+    const bedParam = bedrooms > 0 ? `&bf=${bedrooms}&bt=${bedrooms}` : "";
+    return `https://www.propertyfinder.ae/en/search?c=1&t=1&q=${q}${bedParam}`;
   }
-  // Bayut
+  // Bayut: search_query=free-text, beds_min/beds_max=bedrooms
   const q = encodeURIComponent(`${project} ${district}`);
-  return `https://www.bayut.com/to-buy/property/abu-dhabi/?search_query=${q}`;
+  const bedParam =
+    bedrooms > 0 ? `&beds_min=${bedrooms}&beds_max=${bedrooms}` : "";
+  return `https://www.bayut.com/to-buy/property/abu-dhabi/?search_query=${q}${bedParam}`;
 }
 
 // --- Core: derive project|bedroom groups from ADREC transactions ---

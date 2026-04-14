@@ -1111,7 +1111,7 @@ function GroupCard({
           </div>
           <div className="mt-2 flex gap-2">
             <a
-              href={`https://www.propertyfinder.ae/en/search?c=1&q=${encodeURIComponent(group.project + " " + group.district)}&rb=${group.bedrooms}`}
+              href={`https://www.propertyfinder.ae/en/search?c=1&t=1&q=${encodeURIComponent(group.project + " " + group.district)}${group.bedrooms > 0 ? `&bf=${group.bedrooms}&bt=${group.bedrooms}` : ""}`}
               target="_blank"
               rel="noopener noreferrer"
               className="flex flex-1 items-center justify-center gap-1 rounded-lg border border-[#EF4036]/30 bg-[#EF4036]/5 py-2 text-[11px] font-semibold text-[#EF4036] transition-colors hover:bg-[#EF4036]/10"
@@ -1120,7 +1120,7 @@ function GroupCard({
               <ArrowUpRight className="h-3 w-3" />
             </a>
             <a
-              href={`https://www.bayut.com/to-buy/property/abu-dhabi/?search_query=${encodeURIComponent(group.project)}`}
+              href={`https://www.bayut.com/to-buy/property/abu-dhabi/?search_query=${encodeURIComponent(group.project + " " + group.district)}${group.bedrooms > 0 ? `&beds_min=${group.bedrooms}&beds_max=${group.bedrooms}` : ""}`}
               target="_blank"
               rel="noopener noreferrer"
               className="flex flex-1 items-center justify-center gap-1 rounded-lg border border-[#00C48C]/30 bg-[#00C48C]/5 py-2 text-[11px] font-semibold text-[#00C48C] transition-colors hover:bg-[#00C48C]/10"
