@@ -59,6 +59,11 @@ export interface ListingGroup {
   distressCount: number; // listings ≥5% below ADREC rate
 }
 
+// Distress threshold: a listing is "distress" when its asking rate is at
+// least this fraction below the ADREC median. Centralised so filter, stats,
+// builder, and report stay in lockstep.
+export const DISTRESS_THRESHOLD = 0.05; // 5%
+
 // --- Deterministic PRNG so sample data is stable per project ---
 
 function hashString(s: string): number {
@@ -288,7 +293,7 @@ export function buildListingGroups(transactions: Transaction[]): ListingGroup[] 
     const askRateMedian = Math.round(median(askRates));
 
     const distressCount = listings.filter(
-      (l) => l.askingRate < adrecMedianRate * 0.95
+      (l) => l.askingRate < adrecMedianRate * (1 - DISTRESS_THRESHOLD)
     ).length;
 
     const pfCount = listings.filter((l) => l.platform === "propertyfinder").length;
@@ -328,7 +333,7 @@ export interface MLSFilterState {
   project: string;
   propertyType: string;
   bedrooms: string;
-  platform: string;
+  platform: "" | MLSPlatform;
   distressOnly: boolean;
   searchQuery: string;
 }
@@ -343,26 +348,78 @@ export const defaultMLSFilters: MLSFilterState = {
   searchQuery: "",
 };
 
+/**
+ * Re-derive a ListingGroup from a (possibly filtered) subset of its listings.
+ * Used when the user scopes to a single platform — we can't just return the
+ * pre-built group as-is because its medians and distress count reflect both
+ * platforms together.
+ *
+ * Returns null if the subset is empty (caller should drop the group).
+ */
+function rebuildGroupFromListings(
+  base: ListingGroup,
+  listings: MLSListing[]
+): ListingGroup | null {
+  if (listings.length === 0) return null;
+  const askPrices = listings.map((l) => l.askingPrice);
+  const askRates = listings.map((l) => l.askingRate);
+  const askPriceMedian = Math.round(median(askPrices));
+  const askRateMedian = Math.round(median(askRates));
+  const pf = listings.filter((l) => l.platform === "propertyfinder").length;
+  const bayut = listings.length - pf;
+  const distressCount = listings.filter(
+    (l) => l.askingRate < base.adrecMedianRate * (1 - DISTRESS_THRESHOLD)
+  ).length;
+  return {
+    ...base,
+    listings,
+    listingCount: listings.length,
+    platforms: { propertyfinder: pf, bayut },
+    askPriceMedian,
+    askPriceMin: Math.min(...askPrices),
+    askPriceMax: Math.max(...askPrices),
+    askRateMedian,
+    premiumPct:
+      ((askRateMedian - base.adrecMedianRate) / base.adrecMedianRate) * 100,
+    distressCount,
+  };
+}
+
 export function applyMLSFilters(
   groups: ListingGroup[],
   filters: MLSFilterState
 ): ListingGroup[] {
   const q = filters.searchQuery.trim().toLowerCase();
-  return groups.filter((g) => {
-    if (filters.district && g.district !== filters.district) return false;
-    if (filters.project && g.project !== filters.project) return false;
-    if (filters.propertyType && g.propertyType !== filters.propertyType) return false;
+  const out: ListingGroup[] = [];
+
+  for (const g of groups) {
+    if (filters.district && g.district !== filters.district) continue;
+    if (filters.project && g.project !== filters.project) continue;
+    if (filters.propertyType && g.propertyType !== filters.propertyType) continue;
     if (filters.bedrooms) {
-      if (filters.bedrooms === "6+" && g.bedrooms < 6) return false;
-      else if (filters.bedrooms !== "6+" && g.bedrooms !== Number(filters.bedrooms)) return false;
+      if (filters.bedrooms === "6+" && g.bedrooms < 6) continue;
+      else if (filters.bedrooms !== "6+" && g.bedrooms !== Number(filters.bedrooms)) continue;
     }
-    if (filters.distressOnly && g.distressCount === 0) return false;
     if (q) {
       const hay = `${g.project} ${g.district}`.toLowerCase();
-      if (!hay.includes(q)) return false;
+      if (!hay.includes(q)) continue;
     }
-    return true;
-  });
+
+    // Platform scope rebuilds the group on the filtered listing set so the
+    // displayed medians, premium %, and distress count match the badge.
+    let scoped: ListingGroup | null = g;
+    if (filters.platform) {
+      const subset = g.listings.filter((l) => l.platform === filters.platform);
+      scoped = rebuildGroupFromListings(g, subset);
+      if (!scoped) continue;
+    }
+
+    if (filters.distressOnly && scoped.distressCount === 0) continue;
+
+    out.push(scoped);
+  }
+
+  return out;
 }
 
 // --- Aggregate stats across filtered groups ---
@@ -454,9 +511,10 @@ export function getDistressListings(groups: ListingGroup[]): Array<
   MLSListing & { discountPct: number; adrecMedianRate: number }
 > {
   const distress: Array<MLSListing & { discountPct: number; adrecMedianRate: number }> = [];
+  const cutoff = 1 - DISTRESS_THRESHOLD;
   for (const g of groups) {
     for (const l of g.listings) {
-      if (l.askingRate < g.adrecMedianRate * 0.95) {
+      if (l.askingRate < g.adrecMedianRate * cutoff) {
         distress.push({
           ...l,
           discountPct: ((l.askingRate - g.adrecMedianRate) / g.adrecMedianRate) * 100,

@@ -41,6 +41,7 @@ import {
   Zap,
   Loader2,
   Sparkles,
+  FileText,
 } from "lucide-react";
 
 interface AgentStatus {
@@ -394,6 +395,7 @@ function MLSContent() {
     (filters.district ? 1 : 0) +
     (filters.project ? 1 : 0) +
     (filters.propertyType ? 1 : 0) +
+    (filters.platform ? 1 : 0) +
     (filters.bedrooms ? 1 : 0) +
     (filters.searchQuery ? 1 : 0);
 
@@ -703,18 +705,48 @@ function MLSContent() {
           </div>
 
           <div className="flex flex-wrap items-center justify-between gap-3 px-5 py-4">
-            <label className="flex cursor-pointer items-center gap-2">
-              <input
-                type="checkbox"
-                checked={filters.distressOnly}
-                onChange={(e) => update({ distressOnly: e.target.checked })}
-                className="h-4 w-4 accent-accent"
-              />
-              <span className="inline-flex items-center gap-1 text-xs font-medium text-foreground">
-                <AlertTriangle className="h-3 w-3 text-negative" />
-                {t("mls_distress_only")}
-              </span>
-            </label>
+            <div className="flex flex-wrap items-center gap-4">
+              {/* Platform pills — replaces the silently-broken implicit filter */}
+              <div className="flex items-center gap-1.5">
+                <span className="text-[11px] font-semibold uppercase tracking-wider text-muted">
+                  {t("mls_platform")}:
+                </span>
+                {([
+                  { value: "", label: t("mls_all_platforms"), color: "accent" },
+                  { value: "propertyfinder", label: t("mls_platform_pf"), color: "#EF4036" },
+                  { value: "bayut", label: t("mls_platform_bayut"), color: "#00C48C" },
+                ] as const).map((opt) => {
+                  const active = filters.platform === opt.value;
+                  return (
+                    <button
+                      key={opt.value || "all"}
+                      type="button"
+                      onClick={() => update({ platform: opt.value })}
+                      className={`rounded-full border px-2.5 py-1 text-[11px] font-semibold transition-colors ${
+                        active
+                          ? "border-accent bg-accent text-background"
+                          : "border-card-border bg-card-bg text-muted hover:border-accent/50 hover:text-foreground"
+                      }`}
+                    >
+                      {opt.label}
+                    </button>
+                  );
+                })}
+              </div>
+
+              <label className="flex cursor-pointer items-center gap-2">
+                <input
+                  type="checkbox"
+                  checked={filters.distressOnly}
+                  onChange={(e) => update({ distressOnly: e.target.checked })}
+                  className="h-4 w-4 accent-accent"
+                />
+                <span className="inline-flex items-center gap-1 text-xs font-medium text-foreground">
+                  <AlertTriangle className="h-3 w-3 text-negative" />
+                  {t("mls_distress_only")}
+                </span>
+              </label>
+            </div>
             <button
               onClick={askAgent}
               disabled={agentThinking}
@@ -1145,6 +1177,14 @@ function GroupCard({
               <ArrowUpRight className="h-3 w-3" />
             </a>
           </div>
+          <a
+            href={`/mls/report?project=${encodeURIComponent(group.project)}&bedrooms=${group.bedrooms}`}
+            className="mt-2 flex items-center justify-center gap-1.5 rounded-lg border border-accent/40 bg-accent/10 py-2 text-[11px] font-semibold text-accent transition-colors hover:bg-accent/20"
+          >
+            <FileText className="h-3 w-3" />
+            {t("mls_generate_report")}
+            <ArrowRight className="h-3 w-3" />
+          </a>
         </div>
       )}
     </div>

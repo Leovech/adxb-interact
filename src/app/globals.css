@@ -147,3 +147,30 @@ html.rtl .maplibregl-popup-content {
   direction: rtl;
   text-align: right;
 }
+
+/* Investor report — print stylesheet
+   Force a light, page-friendly look so saved PDFs are legible regardless of
+   the dark theme preference. The .report-sheet wrapper on the report page
+   gets a white background and ink-style text; everything outside it (header,
+   chat widget, toolbar, action buttons) is hidden via Tailwind's print:hidden
+   utility on the markup itself. */
+@media print {
+  html, body {
+    background: #ffffff !important;
+    color: #111111 !important;
+  }
+  .report-sheet {
+    background: #ffffff !important;
+    color: #111111 !important;
+    box-shadow: none !important;
+    border: 0 !important;
+    padding: 0 !important;
+    max-width: 100% !important;
+  }
+  .report-sheet .text-muted { color: #555555 !important; }
+  .report-sheet .text-foreground { color: #111111 !important; }
+  /* Avoid fragmented sections across pages where possible */
+  .report-sheet section { break-inside: avoid; }
+  /* Compact the page margins */
+  @page { margin: 14mm; }
+}

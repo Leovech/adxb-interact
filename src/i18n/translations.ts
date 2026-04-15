@@ -295,6 +295,12 @@ type TranslationStrings = {
   mls_step_score_detail: string;
   mls_step_finalize: string;
   mls_step_finalize_detail: string;
+  mls_platform: string;
+  mls_all_platforms: string;
+  mls_platform_pf: string;
+  mls_platform_bayut: string;
+  mls_generate_report: string;
+  mls_report_cta: string;
 };
 
 const en: TranslationStrings = {
@@ -580,6 +586,12 @@ const en: TranslationStrings = {
   mls_step_score_detail: "listings flagged ≥5% below market",
   mls_step_finalize: "Finalizing comparison",
   mls_step_finalize_detail: "listings ranked and ready",
+  mls_platform: "Platform",
+  mls_all_platforms: "PF + Bayut",
+  mls_platform_pf: "Property Finder",
+  mls_platform_bayut: "Bayut",
+  mls_generate_report: "Investor Report",
+  mls_report_cta: "Generate a one-page investor report for this project",
 };
 
 const ar: TranslationStrings = {
@@ -865,6 +877,12 @@ const ar: TranslationStrings = {
   mls_step_score_detail: "إعلان أقل من السوق بـ 5% أو أكثر",
   mls_step_finalize: "إتمام المقارنة",
   mls_step_finalize_detail: "إعلان تم ترتيبه وجاهز",
+  mls_platform: "المنصة",
+  mls_all_platforms: "جميع المنصات",
+  mls_platform_pf: "Property Finder",
+  mls_platform_bayut: "Bayut",
+  mls_generate_report: "تقرير المستثمر",
+  mls_report_cta: "إنشاء تقرير من صفحة واحدة لهذا المشروع",
 };
 
 const ru: TranslationStrings = {
@@ -1150,6 +1168,12 @@ const ru: TranslationStrings = {
   mls_step_score_detail: "объявлений ниже рынка на 5% и более",
   mls_step_finalize: "Финализация сравнения",
   mls_step_finalize_detail: "объявлений проранжировано",
+  mls_platform: "Площадка",
+  mls_all_platforms: "PF + Bayut",
+  mls_platform_pf: "Property Finder",
+  mls_platform_bayut: "Bayut",
+  mls_generate_report: "Отчёт инвестора",
+  mls_report_cta: "Создать одностраничный отчёт по проекту",
 };
 
 export const translations: Record<Locale, TranslationStrings> = { en, ar, ru };
