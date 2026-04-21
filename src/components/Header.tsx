@@ -1,10 +1,11 @@
 "use client";
 
-import { Menu, X, Sun, Moon, Globe } from "lucide-react";
+import { Menu, X, Sun, Moon, Globe, User as UserIcon, LogIn } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
 import { useLanguage, useT } from "@/i18n/LanguageContext";
 import { Locale, localeNames } from "@/i18n/translations";
 import LogoMark from "./LogoMark";
+import { useAuth } from "@/components/auth/AuthProvider";
 
 export default function Header() {
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -13,6 +14,7 @@ export default function Header() {
   const langRef = useRef<HTMLDivElement>(null);
   const { locale, setLocale } = useLanguage();
   const t = useT();
+  const { user, status } = useAuth();
 
   // Initialize theme from localStorage on mount
   useEffect(() => {
@@ -51,10 +53,9 @@ export default function Header() {
 
   const navLinks = [
     { label: t("nav_dashboard"), href: "/" },
+    { label: t("nav_trends"), href: "/trends" },
+    { label: t("nav_market_analysis"), href: "/market-analysis" },
     { label: t("nav_mls"), href: "/mls" },
-    { label: t("nav_trendy"), href: "/#trendy" },
-    { label: t("nav_map"), href: "/#map" },
-    { label: t("nav_transactions"), href: "/#transactions" },
   ];
 
   const langFlag: Record<Locale, string> = {
@@ -150,9 +151,35 @@ export default function Header() {
               <Sun className="h-4 w-4" />
             )}
           </button>
-          <button className="rounded-full bg-accent px-4 py-2 text-sm font-semibold text-background transition-colors hover:bg-accent-hover">
-            {t("export_data")}
-          </button>
+          {/* Auth state */}
+          {status === "authenticated" && user ? (
+            <a
+              href="/account"
+              className="flex h-9 items-center gap-1.5 rounded-lg border border-input-border px-2.5 text-sm font-medium text-foreground transition-colors hover:border-accent hover:text-accent"
+              title={user.email}
+            >
+              <UserIcon className="h-3.5 w-3.5" />
+              <span className="max-w-[120px] truncate">
+                {user.name || user.email.split("@")[0]}
+              </span>
+            </a>
+          ) : (
+            <div className="flex items-center gap-1">
+              <a
+                href="/sign-in"
+                className="flex h-9 items-center gap-1.5 rounded-lg border border-input-border px-2.5 text-xs font-medium text-muted transition-colors hover:border-accent hover:text-accent"
+              >
+                <LogIn className="h-3.5 w-3.5" />
+                {t("nav_sign_in")}
+              </a>
+              <a
+                href="/sign-up"
+                className="flex h-9 items-center rounded-lg bg-accent px-3 text-xs font-semibold text-background transition-colors hover:bg-accent-hover"
+              >
+                {t("nav_sign_up")}
+              </a>
+            </div>
+          )}
         </div>
 
         {/* Mobile menu button */}
@@ -227,6 +254,35 @@ export default function Header() {
                 {link.label}
               </a>
             ))}
+            <div className="my-2 border-t border-card-border" />
+            {status === "authenticated" && user ? (
+              <a
+                href="/account"
+                className="flex items-center gap-2 rounded-lg px-3 py-2.5 text-sm font-medium text-foreground hover:bg-card-bg"
+                onClick={() => setMobileOpen(false)}
+              >
+                <UserIcon className="h-4 w-4 text-accent" />
+                {user.name || user.email.split("@")[0]}
+              </a>
+            ) : (
+              <>
+                <a
+                  href="/sign-in"
+                  className="flex items-center gap-2 rounded-lg px-3 py-2.5 text-sm font-medium text-muted hover:bg-card-bg"
+                  onClick={() => setMobileOpen(false)}
+                >
+                  <LogIn className="h-4 w-4" />
+                  {t("nav_sign_in")}
+                </a>
+                <a
+                  href="/sign-up"
+                  className="flex items-center gap-2 rounded-lg bg-accent px-3 py-2.5 text-sm font-semibold text-background"
+                  onClick={() => setMobileOpen(false)}
+                >
+                  {t("nav_sign_up")}
+                </a>
+              </>
+            )}
           </nav>
         </div>
       )}

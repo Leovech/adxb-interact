@@ -7,12 +7,13 @@ import FilterPanel from "@/components/FilterPanel";
 import MedianStats from "@/components/MedianStats";
 import TransactionTable from "@/components/TransactionTable";
 import Charts from "@/components/Charts";
-import TrendyProjects from "@/components/TrendyProjects";
 import MapView from "@/components/MapView";
 import PriceHistory from "@/components/PriceHistory";
 import ContactSection from "@/components/ContactSection";
 import ChatWidget from "@/components/ChatWidget";
 import PageGuide from "@/components/PageGuide";
+import Link from "next/link";
+import { TrendingUp, ChevronRight } from "lucide-react";
 import {
   Transaction,
   Hierarchy,
@@ -114,17 +115,17 @@ function DashboardContent() {
       <main className="mx-auto w-full max-w-[1440px] flex-1 px-4 py-6 lg:px-8">
         <PageGuide
           storageKey="dashboard"
-          title="Welcome to ADXBInteract — Abu Dhabi Real Estate Dashboard"
-          description="This is a DEMO of a real estate intelligence platform for Abu Dhabi. It shows live ADREC transaction data — prices, trends, maps, and project analytics. We're building this for brokers & investors and need YOUR feedback to shape the product."
+          title="Welcome to ADXBInteract — Abu Dhabi Real Estate Intelligence (DEMO)"
+          description="This is a DEMO of an investor decision-support platform for Abu Dhabi real estate. The Dashboard below is the market-exploration surface — filter ADREC transactions any way you like. For momentum & recommendations, jump to Trends and Market Analysis in the nav."
           steps={[
-            { icon: "🔍", text: "Use the smart search bar or filters at the top to narrow by district, project, property type, bedrooms, date range, and more." },
-            { icon: "📊", text: "Scroll down to see KPI cards, price charts, trendy projects, a map view, and a full transaction table — all update live as you filter." },
-            { icon: "🏠", text: "Click 'MLS Compare' in the nav to see how asking prices on Property Finder & Bayut stack up against real closed-sale data." },
-            { icon: "📄", text: "From MLS Compare, open the 'Investor Report' on any project card for a one-page brief you can print or share as PDF." },
-            { icon: "🌐", text: "Try switching language (EN / AR / RU) and dark/light mode — everything adapts, including RTL layout for Arabic." },
-            { icon: "💬", text: "This is a DEMO — please tell us what's useful, what's confusing, and what you'd want added. Your feedback shapes the product!" },
+            { icon: "🔍", text: "Filter ADREC closed-sale transactions by district, project, property type, bedrooms, date range, price, and more." },
+            { icon: "📊", text: "KPI cards, median stats, price charts, map, and a full transaction table all update live with your filters." },
+            { icon: "📈", text: "Open Trends (nav) for ranked project momentum — 10-day, 3/6/9/12-month windows, surging vs cooling cohorts." },
+            { icon: "🎯", text: "Open Market Analysis (nav) for ranked Buy/Watch/Avoid recommendations with plain-English reasoning." },
+            { icon: "🏠", text: "MLS Compare (nav) shows what PF/Bayut are asking vs what actually closed." },
+            { icon: "💬", text: "THIS IS A DEMO — your feedback shapes the product. Please tell us what's useful, what's missing, and what you'd pay for." },
           ]}
-          feedbackNote="Please share what you think — does this data help your investment decisions? What's missing? What would you pay for? Screenshot anything confusing and send it over."
+          feedbackNote="Does this data help your investment decisions? What's the ONE feature that would make you sign up? Screenshot anything confusing and send it over."
         />
 
         {/* Hero */}
@@ -155,8 +156,29 @@ function DashboardContent() {
           {/* Charts */}
           <Charts data={filtered} />
 
-          {/* Trendy Projects */}
-          <TrendyProjects data={filtered} />
+          {/* Trends → dedicated /trends page */}
+          <Link
+            href="/trends"
+            className="group flex items-center justify-between gap-4 rounded-xl border border-accent/25 bg-gradient-to-r from-accent/10 via-card-bg to-card-bg px-5 py-4 transition-colors hover:border-accent/50"
+          >
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-accent/15">
+                <TrendingUp className="h-5 w-5 text-accent" />
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-foreground">
+                  Trending projects & market momentum
+                </p>
+                <p className="text-xs text-muted">
+                  Ranked transaction activity across 10d / 3mo / 6mo / 9mo / 12mo windows, with surging & cooling signals
+                </p>
+              </div>
+            </div>
+            <div className="flex shrink-0 items-center gap-1 text-sm font-semibold text-accent">
+              Open Trends
+              <ChevronRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
+            </div>
+          </Link>
 
           {/* Price History */}
           <PriceHistory data={filtered} />
