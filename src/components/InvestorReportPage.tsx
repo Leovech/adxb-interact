@@ -199,12 +199,12 @@ function ReportContent({ project, bedrooms }: Props) {
           <div className="mt-6 grid grid-cols-2 gap-4 md:grid-cols-4">
             <Stat label="Asking median" value={formatAED(report.askPriceMedianAED)} sub={`${report.askRateMedian.toLocaleString()} AED/sqft`} />
             <Stat
-              label="Market median (ADREC)"
+              label={`Recent market (${report.recentWindowMonths}mo)`}
               value={formatAED(report.marketPriceMedianAED)}
-              sub={`${report.marketRateMedian.toLocaleString()} AED/sqft`}
+              sub={`${report.marketRateMedian.toLocaleString()} AED/sqft · n=${report.recentTxCount}`}
             />
             <Stat
-              label="Premium vs market"
+              label="Premium vs recent"
               value={`${report.premiumPct >= 0 ? "+" : ""}${report.premiumPct.toFixed(1)}%`}
               sub={report.premiumPct < 0 ? "Buyer's edge" : "Seller's market"}
               accent={report.premiumPct < 0 ? "positive" : report.premiumPct > 8 ? "negative" : undefined}
@@ -215,6 +215,47 @@ function ReportContent({ project, bedrooms }: Props) {
               sub={`~${formatAED(report.yieldEstimate.monthlyRentAED)} AED/month`}
               accent="positive"
             />
+          </div>
+
+          {/* Recent vs historical drift — lets a reader see if the market has
+              moved fast enough that the 24mo median is misleading on its own. */}
+          <div className="mt-3 grid grid-cols-2 gap-3 text-xs md:grid-cols-4">
+            <div className="rounded-lg border border-card-border bg-background/40 p-2.5 print:bg-transparent">
+              <p className="text-[10px] font-semibold uppercase tracking-wider text-muted">
+                24-month median
+              </p>
+              <p className="mt-0.5 text-sm font-semibold text-muted">
+                {formatAED(report.historicalPriceMedianAED)} · {report.historicalRateMedian.toLocaleString()} AED/sqft
+              </p>
+            </div>
+            {report.historicalRateMedian > 0 && (() => {
+              const driftPct =
+                ((report.marketRateMedian - report.historicalRateMedian) /
+                  report.historicalRateMedian) * 100;
+              const driftColor =
+                Math.abs(driftPct) < 5
+                  ? "text-foreground"
+                  : driftPct > 0
+                  ? "text-positive"
+                  : "text-negative";
+              return (
+                <div className="rounded-lg border border-card-border bg-background/40 p-2.5 md:col-span-3 print:bg-transparent">
+                  <p className="text-[10px] font-semibold uppercase tracking-wider text-muted">
+                    Market drift ({report.recentWindowMonths}mo vs 24mo)
+                  </p>
+                  <p className={`mt-0.5 text-sm font-semibold ${driftColor}`}>
+                    {driftPct >= 0 ? "+" : ""}{driftPct.toFixed(1)}%
+                    <span className="ms-2 font-normal text-muted">
+                      {Math.abs(driftPct) >= 10
+                        ? "— fast-moving market, 24mo median is stale"
+                        : Math.abs(driftPct) >= 5
+                        ? "— meaningful drift"
+                        : "— stable, 24mo median is a good anchor"}
+                    </span>
+                  </p>
+                </div>
+              );
+            })()}
           </div>
 
           <div className="mt-6 grid grid-cols-1 gap-4 md:grid-cols-2">

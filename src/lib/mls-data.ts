@@ -47,16 +47,27 @@ export interface ListingGroup {
   askRateMedian: number;
   listings: MLSListing[];
 
-  // ADREC (real)
+  // ADREC (real) — 24-month window: used for liquidity + context
   adrecTxCount: number;
   adrecMedianPrice: number;
   adrecMedianRate: number;
   adrecLastDate: string;
   typicalSize: number;
 
-  // Comparison
-  premiumPct: number; // listings median vs ADREC median
-  distressCount: number; // listings ≥5% below ADREC rate
+  // Recent market (6-12mo window depending on tx density): the honest
+  // anchor for "what sellers are asking right now". In rising markets
+  // the 24mo median lags current prices by 10-30%, so we compute a
+  // second median over a tighter window and use it for listing
+  // generation and the premium/distress comparison.
+  recentWindowMonths: number; // 6, 12, or 24 depending on data density
+  recentTxCount: number;
+  recentMedianPrice: number;
+  recentMedianRate: number;
+
+  // Comparison (both anchored to recentMedianRate now — that's what
+  // matches what the user sees on PF/Bayut)
+  premiumPct: number; // listings median vs recent median
+  distressCount: number; // listings ≥5% below recent rate
 }
 
 // Distress threshold: a listing is "distress" when its asking rate is at
@@ -156,14 +167,19 @@ export function buildListingUrl(
 
 // --- Core: derive project|bedroom groups from ADREC transactions ---
 
+interface AdrecTx {
+  date: string;
+  price: number;
+  rate: number;
+  size: number;
+}
+
 interface AdrecGroup {
   project: string;
   district: string;
   propertyType: string;
   bedrooms: number;
-  prices: number[];
-  rates: number[];
-  sizes: number[];
+  txs: AdrecTx[]; // all tx in the 24mo window (sorted newest-first)
   lastDate: string;
   count: number;
 }
@@ -194,23 +210,50 @@ function buildAdrecGroups(transactions: Transaction[]): AdrecGroup[] {
         district: t.district,
         propertyType: t.propertyType,
         bedrooms: t.bedrooms,
-        prices: [],
-        rates: [],
-        sizes: [],
+        txs: [],
         lastDate: t.date,
         count: 0,
       };
       groups.set(key, g);
     }
-    g.prices.push(t.price);
-    g.rates.push(t.ratePerSqft);
-    g.sizes.push(t.sizeSqft);
+    g.txs.push({ date: t.date, price: t.price, rate: t.ratePerSqft, size: t.sizeSqft });
     if (t.date > g.lastDate) g.lastDate = t.date;
     g.count++;
   }
 
+  for (const g of groups.values()) {
+    g.txs.sort((a, b) => b.date.localeCompare(a.date)); // newest first
+  }
+
   // Only keep groups with enough data for a meaningful median
   return [...groups.values()].filter((g) => g.count >= 3);
+}
+
+/**
+ * Pick the best "current market" window for this cohort. We want an anchor
+ * that reflects today's prices, not a 24-month average — in fast-moving
+ * markets like Reem Island a 24mo median can lag the recent rate by 20-30%,
+ * which caused our asking-price sample to look 30% cheaper than real PF /
+ * Bayut inventory. We step through 6 → 12 → 24 months and pick the first
+ * window with at least `minTx` data points. The older fallbacks keep thin
+ * project cohorts (handful of sales) from collapsing to zero.
+ */
+function pickRecentWindow(
+  txs: AdrecTx[],
+  minTx = 5
+): { months: number; subset: AdrecTx[] } {
+  const now = new Date();
+  const windows: number[] = [6, 12, 24];
+  for (const months of windows) {
+    const cutoff = new Date(now);
+    cutoff.setMonth(cutoff.getMonth() - months);
+    const cutoffStr = cutoff.toISOString().slice(0, 10);
+    const subset = txs.filter((t) => t.date >= cutoffStr);
+    if (subset.length >= minTx || months === 24) {
+      return { months, subset };
+    }
+  }
+  return { months: 24, subset: txs };
 }
 
 // --- Core: generate sample listings + stats per group ---
@@ -220,9 +263,23 @@ export function buildListingGroups(transactions: Transaction[]): ListingGroup[] 
 
   const result: ListingGroup[] = adrecGroups.map((g) => {
     const seed = prng(hashString(`${g.project}|${g.bedrooms}`));
-    const adrecMedianPrice = median(g.prices);
-    const adrecMedianRate = median(g.rates);
-    const typicalSize = Math.round(median(g.sizes));
+
+    // --- Anchors -----------------------------------------------------------
+    // 24mo median: kept for liquidity context and long-run reference.
+    const adrecPrices = g.txs.map((t) => t.price);
+    const adrecRates = g.txs.map((t) => t.rate);
+    const adrecSizes = g.txs.map((t) => t.size);
+    const adrecMedianPrice = median(adrecPrices);
+    const adrecMedianRate = median(adrecRates);
+    const typicalSize = Math.round(median(adrecSizes));
+
+    // Recent window: 6 → 12 → 24 months, whichever first has ≥5 tx. This
+    // is what we anchor asking-price generation to, so the sample reflects
+    // today's market rather than an 18-month-old median. Reem Island 1BR
+    // rates jumped ~30% between 2024 and 2026 — the 24mo median was off.
+    const { months: recentWindowMonths, subset: recentTxs } = pickRecentWindow(g.txs);
+    const recentMedianPrice = median(recentTxs.map((t) => t.price));
+    const recentMedianRate = median(recentTxs.map((t) => t.rate));
 
     // Listing count scales with ADREC transaction volume.
     // Real per-bedroom-config inventory on PF+Bayut combined is usually
@@ -237,26 +294,34 @@ export function buildListingGroups(transactions: Transaction[]): ListingGroup[] 
     const today = new Date();
 
     for (let i = 0; i < listingCount; i++) {
-      // Price distribution (tuned to match real PF/Bayut inventory):
-      //  50% fair (±3% of ADREC median) — most sellers price at market
-      //  35% modest premium (3-10% above) — small aspirational markup
-      //  10% softer (2-5% below) — motivated sellers, not distress
-      //   5% distress (5-11% below) — genuine below-market deals
+      // Price distribution, anchored to the RECENT median rate.
+      // Real Abu Dhabi market: sellers list ~10% above recent closed-sale
+      // rate on average, with a long tail of aspirational +20-30% asks.
+      // Validated against Pixel 1BR on Al Reem Island (recent ~2,000 AED/sqft,
+      // PF asking ~2,200-2,400 AED/sqft).
+      //
+      //   4%  distress       (0.88-0.94  → 6-12% below recent)
+      //   8%  motivated      (0.95-0.99  → 1-5% below recent)
+      //  28%  at market      (1.00-1.05  → +0-5%)
+      //  40%  premium        (1.05-1.15  → +5-15%)  ← the typical asking band
+      //  20%  aspirational   (1.15-1.28  → +15-28%)
       const r = seed();
       let priceMultiplier: number;
-      if (r < 0.05) {
-        priceMultiplier = 0.89 + seed() * 0.06; // 5-11% below
-      } else if (r < 0.15) {
-        priceMultiplier = 0.95 + seed() * 0.03; // 2-5% below
-      } else if (r < 0.65) {
-        priceMultiplier = 0.97 + seed() * 0.06; // ±3%
+      if (r < 0.04) {
+        priceMultiplier = 0.88 + seed() * 0.06;
+      } else if (r < 0.12) {
+        priceMultiplier = 0.95 + seed() * 0.04;
+      } else if (r < 0.40) {
+        priceMultiplier = 1.00 + seed() * 0.05;
+      } else if (r < 0.80) {
+        priceMultiplier = 1.05 + seed() * 0.10;
       } else {
-        priceMultiplier = 1.03 + seed() * 0.07; // 3-10% above
+        priceMultiplier = 1.15 + seed() * 0.13;
       }
 
       const sizeVariance = 0.9 + seed() * 0.2; // ±10% size variance
       const sizeSqft = Math.max(300, Math.round(typicalSize * sizeVariance));
-      const askingRate = Math.round(adrecMedianRate * priceMultiplier);
+      const askingRate = Math.round(recentMedianRate * priceMultiplier);
       const askingPrice = Math.round((sizeSqft * askingRate) / 1000) * 1000;
 
       const platform: MLSPlatform = seed() < 0.55 ? "propertyfinder" : "bayut";
@@ -292,8 +357,10 @@ export function buildListingGroups(transactions: Transaction[]): ListingGroup[] 
     const askPriceMedian = Math.round(median(askPrices));
     const askRateMedian = Math.round(median(askRates));
 
+    // Premium + distress both measured vs the RECENT market rate — that's
+    // what the user sees on PF/Bayut, so that's the honest comparable.
     const distressCount = listings.filter(
-      (l) => l.askingRate < adrecMedianRate * (1 - DISTRESS_THRESHOLD)
+      (l) => l.askingRate < recentMedianRate * (1 - DISTRESS_THRESHOLD)
     ).length;
 
     const pfCount = listings.filter((l) => l.platform === "propertyfinder").length;
@@ -317,7 +384,11 @@ export function buildListingGroups(transactions: Transaction[]): ListingGroup[] 
       adrecMedianRate: Math.round(adrecMedianRate),
       adrecLastDate: g.lastDate,
       typicalSize,
-      premiumPct: ((askRateMedian - adrecMedianRate) / adrecMedianRate) * 100,
+      recentWindowMonths,
+      recentTxCount: recentTxs.length,
+      recentMedianPrice: Math.round(recentMedianPrice),
+      recentMedianRate: Math.round(recentMedianRate),
+      premiumPct: ((askRateMedian - recentMedianRate) / recentMedianRate) * 100,
       distressCount,
     };
   });
@@ -368,7 +439,7 @@ function rebuildGroupFromListings(
   const pf = listings.filter((l) => l.platform === "propertyfinder").length;
   const bayut = listings.length - pf;
   const distressCount = listings.filter(
-    (l) => l.askingRate < base.adrecMedianRate * (1 - DISTRESS_THRESHOLD)
+    (l) => l.askingRate < base.recentMedianRate * (1 - DISTRESS_THRESHOLD)
   ).length;
   return {
     ...base,
@@ -380,7 +451,7 @@ function rebuildGroupFromListings(
     askPriceMax: Math.max(...askPrices),
     askRateMedian,
     premiumPct:
-      ((askRateMedian - base.adrecMedianRate) / base.adrecMedianRate) * 100,
+      ((askRateMedian - base.recentMedianRate) / base.recentMedianRate) * 100,
     distressCount,
   };
 }
@@ -522,12 +593,16 @@ export function getDistressListings(groups: ListingGroup[]): Array<
   const distress: Array<MLSListing & { discountPct: number; adrecMedianRate: number }> = [];
   const cutoff = 1 - DISTRESS_THRESHOLD;
   for (const g of groups) {
+    // Distress is measured against the RECENT median rate — that's what
+    // the listing is actually competing against on PF/Bayut today. Using
+    // the 24mo median would flag every Reem Island 1BR as "distress"
+    // purely because the long-run median lags the current market.
     for (const l of g.listings) {
-      if (l.askingRate < g.adrecMedianRate * cutoff) {
+      if (l.askingRate < g.recentMedianRate * cutoff) {
         distress.push({
           ...l,
-          discountPct: ((l.askingRate - g.adrecMedianRate) / g.adrecMedianRate) * 100,
-          adrecMedianRate: g.adrecMedianRate,
+          discountPct: ((l.askingRate - g.recentMedianRate) / g.recentMedianRate) * 100,
+          adrecMedianRate: g.recentMedianRate,
         });
       }
     }

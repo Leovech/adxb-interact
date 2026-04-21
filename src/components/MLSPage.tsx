@@ -804,6 +804,16 @@ function MLSContent() {
         {/* Results (only shown after agent runs) */}
         {!agentThinking && appliedFilters && (
           <>
+            {/* Prominent sample-listings banner — asking prices are modelled,
+                not scraped. Users should verify on PF/Bayut. */}
+            <div className="mb-5 flex items-start gap-3 rounded-xl border border-accent/25 bg-accent/5 px-4 py-3">
+              <Info className="mt-0.5 h-4 w-4 shrink-0 text-accent" />
+              <div className="text-xs leading-relaxed text-foreground">
+                <span className="font-semibold">{t("mls_model_banner_title")}</span>
+                <p className="mt-0.5 text-muted">{t("mls_model_banner_text")}</p>
+              </div>
+            </div>
+
             {/* Overview Stats */}
             <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
               <StatCard
@@ -1096,7 +1106,7 @@ function GroupCard({
           </div>
         </div>
 
-        <div className="grid grid-cols-2 divide-x divide-card-border">
+        <div className="grid grid-cols-3 divide-x divide-card-border">
           <div className="p-3">
             <p className="text-[10px] font-semibold uppercase tracking-wider text-muted">{t("mls_asking")}</p>
             <p className="mt-1 text-lg font-bold text-foreground">{formatAED(group.askPriceMedian)}</p>
@@ -1105,8 +1115,17 @@ function GroupCard({
             </p>
           </div>
           <div className="p-3">
-            <p className="text-[10px] font-semibold uppercase tracking-wider text-muted">{t("mls_adrec_actual")}</p>
-            <p className="mt-1 text-lg font-bold text-accent">{formatAED(group.adrecMedianPrice)}</p>
+            <p className="text-[10px] font-semibold uppercase tracking-wider text-muted">
+              {t("mls_recent_market", group.recentWindowMonths)}
+            </p>
+            <p className="mt-1 text-lg font-bold text-accent">{formatAED(group.recentMedianPrice)}</p>
+            <p className="text-[10px] text-muted">
+              {group.recentTxCount} {t("transactions_label")}
+            </p>
+          </div>
+          <div className="p-3">
+            <p className="text-[10px] font-semibold uppercase tracking-wider text-muted">{t("mls_historical_24mo")}</p>
+            <p className="mt-1 text-lg font-bold text-muted">{formatAED(group.adrecMedianPrice)}</p>
             <p className="text-[10px] text-muted">
               {group.adrecTxCount} {t("transactions_label")}
             </p>

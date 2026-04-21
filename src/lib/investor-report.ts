@@ -74,11 +74,17 @@ export interface InvestorReport {
   propertyType: string;
   bedrooms: number;
 
-  // Market position
+  // Market position — "market" = RECENT window (6-12mo), the honest anchor
+  // for live PF/Bayut asking prices. Long-run 24mo median is exposed as
+  // `historicalRateMedian` so readers can see how fast the market has moved.
   askPriceMedianAED: number;
   marketPriceMedianAED: number;
   askRateMedian: number;
   marketRateMedian: number;
+  historicalPriceMedianAED: number; // 24mo median
+  historicalRateMedian: number;     // 24mo median
+  recentWindowMonths: number;       // 6, 12, or 24
+  recentTxCount: number;
   premiumPct: number;
   typicalSizeSqft: number;
 
@@ -131,16 +137,15 @@ export function estimateYield(group: ListingGroup): YieldEstimate {
   const floor = districtYieldFloor(group.district);
   const ceiling = floor + 0.015; // ±150bps band
 
-  // We use the ADREC median price (closer to fundamentals than asking) and
-  // assume mid-band yield. This is a model, not advice — confidence reflects
-  // ADREC sample size.
+  // Anchor to the RECENT median price (6-12mo) so yield reflects today's
+  // market, not a stale 24mo average that drags rising-market yields down.
   const grossPct = ((floor + ceiling) / 2) * 100;
-  const annualRent = group.adrecMedianPrice * ((floor + ceiling) / 2);
+  const annualRent = group.recentMedianPrice * ((floor + ceiling) / 2);
   const monthlyRentAED = Math.round(annualRent / 12 / 1000) * 1000;
 
   let confidence: YieldEstimate["confidence"] = "low";
-  if (group.adrecTxCount >= 30) confidence = "high";
-  else if (group.adrecTxCount >= 12) confidence = "medium";
+  if (group.recentTxCount >= 20) confidence = "high";
+  else if (group.recentTxCount >= 8) confidence = "medium";
 
   return {
     grossPct: Math.round(grossPct * 10) / 10,
@@ -148,7 +153,8 @@ export function estimateYield(group: ListingGroup): YieldEstimate {
     confidence,
     basis:
       `Modelled from district yield band (${(floor * 100).toFixed(1)}–${(ceiling * 100).toFixed(1)}%) ` +
-      `applied to ADREC median price (${group.adrecMedianPrice.toLocaleString()} AED). ` +
+      `applied to recent ${group.recentWindowMonths}mo median price ` +
+      `(${group.recentMedianPrice.toLocaleString()} AED, n=${group.recentTxCount}). ` +
       `Replace with live rental comparables when available.`,
   };
 }
@@ -199,13 +205,15 @@ export function topDistressDeals(
   group: ListingGroup,
   limit = 5
 ): BestDealRow[] {
-  const cutoff = group.adrecMedianRate * (1 - DISTRESS_THRESHOLD);
+  // Discount measured vs RECENT median (what the unit is competing
+  // against on PF/Bayut right now), not the 24-month median.
+  const cutoff = group.recentMedianRate * (1 - DISTRESS_THRESHOLD);
   const rows: BestDealRow[] = [];
   for (const l of group.listings) {
     if (l.askingRate >= cutoff) continue;
     const discountPct =
-      ((l.askingRate - group.adrecMedianRate) / group.adrecMedianRate) * 100;
-    const fairPrice = Math.round(l.sizeSqft * group.adrecMedianRate);
+      ((l.askingRate - group.recentMedianRate) / group.recentMedianRate) * 100;
+    const fairPrice = Math.round(l.sizeSqft * group.recentMedianRate);
     rows.push({
       listing: l,
       discountPct,
@@ -340,9 +348,13 @@ export function buildInvestorReport(
     bedrooms: group.bedrooms,
 
     askPriceMedianAED: group.askPriceMedian,
-    marketPriceMedianAED: group.adrecMedianPrice,
+    marketPriceMedianAED: group.recentMedianPrice,
     askRateMedian: group.askRateMedian,
-    marketRateMedian: group.adrecMedianRate,
+    marketRateMedian: group.recentMedianRate,
+    historicalPriceMedianAED: group.adrecMedianPrice,
+    historicalRateMedian: group.adrecMedianRate,
+    recentWindowMonths: group.recentWindowMonths,
+    recentTxCount: group.recentTxCount,
     premiumPct: group.premiumPct,
     typicalSizeSqft: group.typicalSize,
 
