@@ -295,6 +295,18 @@ type TranslationStrings = {
   mls_step_score_detail: string;
   mls_step_finalize: string;
   mls_step_finalize_detail: string;
+  mls_platform: string;
+  mls_all_platforms: string;
+  mls_platform_pf: string;
+  mls_platform_bayut: string;
+  mls_generate_report: string;
+  mls_report_cta: string;
+  mls_showing_count: string;
+  mls_load_more: string;
+  mls_recent_market: string;
+  mls_historical_24mo: string;
+  mls_model_banner_title: string;
+  mls_model_banner_text: string;
 };
 
 const en: TranslationStrings = {
@@ -580,6 +592,18 @@ const en: TranslationStrings = {
   mls_step_score_detail: "listings flagged ≥5% below market",
   mls_step_finalize: "Finalizing comparison",
   mls_step_finalize_detail: "listings ranked and ready",
+  mls_platform: "Platform",
+  mls_all_platforms: "PF + Bayut",
+  mls_platform_pf: "Property Finder",
+  mls_platform_bayut: "Bayut",
+  mls_generate_report: "Investor Report",
+  mls_report_cta: "Generate a one-page investor report for this project",
+  mls_showing_count: "Showing {0} of {1}",
+  mls_load_more: "Load {0} more ({1} remaining)",
+  mls_recent_market: "Recent ({0}mo)",
+  mls_historical_24mo: "24mo median",
+  mls_model_banner_title: "Sample listings — verify live on PF / Bayut",
+  mls_model_banner_text: "Asking prices are modelled against the recent (6-12mo) ADREC median, not scraped. The 24-month median is shown alongside so you can see how far the market has moved. Use the PF / Bayut links on each card to sanity-check.",
 };
 
 const ar: TranslationStrings = {
@@ -865,6 +889,18 @@ const ar: TranslationStrings = {
   mls_step_score_detail: "إعلان أقل من السوق بـ 5% أو أكثر",
   mls_step_finalize: "إتمام المقارنة",
   mls_step_finalize_detail: "إعلان تم ترتيبه وجاهز",
+  mls_platform: "المنصة",
+  mls_all_platforms: "جميع المنصات",
+  mls_platform_pf: "Property Finder",
+  mls_platform_bayut: "Bayut",
+  mls_generate_report: "تقرير المستثمر",
+  mls_report_cta: "إنشاء تقرير من صفحة واحدة لهذا المشروع",
+  mls_showing_count: "عرض {0} من {1}",
+  mls_load_more: "تحميل {0} إضافية (متبقي {1})",
+  mls_recent_market: "الأخيرة ({0} شهر)",
+  mls_historical_24mo: "متوسط ٢٤ شهر",
+  mls_model_banner_title: "إعلانات عينة — تحقق مباشرة على PF / Bayut",
+  mls_model_banner_text: "أسعار الطلب نموذجية مقارنة بمتوسط ADREC الأخير (6-12 شهر)، وليست مسحوبة من المنصات. متوسط الـ24 شهر معروض بجانبها لرؤية مدى تحرك السوق. استخدم روابط PF / Bayut على كل بطاقة للتحقق.",
 };
 
 const ru: TranslationStrings = {
@@ -1150,6 +1186,18 @@ const ru: TranslationStrings = {
   mls_step_score_detail: "объявлений ниже рынка на 5% и более",
   mls_step_finalize: "Финализация сравнения",
   mls_step_finalize_detail: "объявлений проранжировано",
+  mls_platform: "Площадка",
+  mls_all_platforms: "PF + Bayut",
+  mls_platform_pf: "Property Finder",
+  mls_platform_bayut: "Bayut",
+  mls_generate_report: "Отчёт инвестора",
+  mls_report_cta: "Создать одностраничный отчёт по проекту",
+  mls_showing_count: "Показано {0} из {1}",
+  mls_load_more: "Загрузить ещё {0} (осталось {1})",
+  mls_recent_market: "Свежие ({0} мес)",
+  mls_historical_24mo: "Медиана 24 мес",
+  mls_model_banner_title: "Модельные объявления — сверяйте на PF / Bayut",
+  mls_model_banner_text: "Цены предложения смоделированы относительно недавней медианы ADREC (6-12 мес), а не собраны с сайтов. Медиана за 24 месяца показана рядом, чтобы вы видели, насколько рынок сдвинулся. Используйте ссылки PF / Bayut на каждой карточке для проверки.",
 };
 
 export const translations: Record<Locale, TranslationStrings> = { en, ar, ru };

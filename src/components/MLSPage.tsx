@@ -10,6 +10,7 @@ import {
   decodeTransactions,
 } from "@/data/abu-dhabi";
 import { LanguageProvider, useT } from "@/i18n/LanguageContext";
+import PageGuide from "@/components/PageGuide";
 import {
   buildListingGroups,
   buildListingUrl,
@@ -41,6 +42,8 @@ import {
   Zap,
   Loader2,
   Sparkles,
+  FileText,
+  ChevronDown,
 } from "lucide-react";
 
 interface AgentStatus {
@@ -108,6 +111,7 @@ function MLSContent() {
   const [filters, setFilters] = useState<MLSFilterState>(defaultMLSFilters);
   const [appliedFilters, setAppliedFilters] = useState<MLSFilterState | null>(null);
   const [expandedGroup, setExpandedGroup] = useState<string | null>(null);
+  const [visibleCount, setVisibleCount] = useState(60);
   const [agentStatus, setAgentStatus] = useState<AgentStatus | null>(null);
   const [agentThinking, setAgentThinking] = useState(false);
   const [agentSteps, setAgentSteps] = useState<AgentStep[]>([]);
@@ -120,10 +124,12 @@ function MLSContent() {
     let cancelled = false;
     async function loadData() {
       try {
+        // no-cache so fresh data propagates the moment the on-disk JSON
+        // changes (ETag/304 keeps the round-trip cheap when it hasn't).
         const [txRes, hierRes, statusRes] = await Promise.all([
-          fetch("/data/transactions.json"),
-          fetch("/data/hierarchy.json"),
-          fetch("/api/mls/status"),
+          fetch("/data/transactions.json", { cache: "no-cache" }),
+          fetch("/data/hierarchy.json", { cache: "no-cache" }),
+          fetch("/api/mls/status", { cache: "no-store" }),
         ]);
         if (!txRes.ok) throw new Error("Failed to load transaction data");
         if (!hierRes.ok) throw new Error("Failed to load hierarchy data");
@@ -268,6 +274,7 @@ function MLSContent() {
         if (agentRunRef.current !== runId) return;
         setAppliedFilters({ ...targetFilters });
         setAgentThinking(false);
+        setVisibleCount(60); // reset pagination on every new result set
       }, elapsed + 250);
     },
     [allGroups, t]
@@ -394,6 +401,7 @@ function MLSContent() {
     (filters.district ? 1 : 0) +
     (filters.project ? 1 : 0) +
     (filters.propertyType ? 1 : 0) +
+    (filters.platform ? 1 : 0) +
     (filters.bedrooms ? 1 : 0) +
     (filters.searchQuery ? 1 : 0);
 
@@ -401,6 +409,21 @@ function MLSContent() {
     <>
       <Header />
       <main className="mx-auto w-full max-w-[1440px] flex-1 px-4 py-6 lg:px-8">
+        <PageGuide
+          storageKey="mls"
+          title="MLS Compare — Asking Prices vs Actual Sales (DEMO)"
+          description="This page compares what sellers are asking on Property Finder & Bayut against actual closed-sale data from ADREC. It's a DEMO — asking prices shown here are modelled, not live-scraped, but the deep-links take you straight to real PF/Bayut listings so you can verify. We need your feedback!"
+          steps={[
+            { icon: "🤖", text: "Type a natural-language query in the search box (e.g. 'Pixel 1br Al Reem') or use the dropdowns, then click 'Ask the Agent' to run the comparison." },
+            { icon: "📊", text: "Results show project cards with three columns: Asking (modelled), Recent Market (last 6-12mo ADREC sales), and 24-month historical — so you can see how fast prices are moving." },
+            { icon: "🔴", text: "Cards flagged with 'Distress' have listings priced 5%+ below the recent market rate — potential bargains worth checking on PF/Bayut." },
+            { icon: "🔗", text: "Expand any card and click 'Open on Property Finder' or 'Open on Bayut' to see LIVE listings matching that project + bedroom config." },
+            { icon: "📄", text: "Click 'Investor Report' on an expanded card to generate a one-page brief with yield model, price trend, and a buy/watch/avoid verdict." },
+            { icon: "💬", text: "THIS IS A DEMO — Do the numbers feel right? Is the comparison useful? What's missing? Let us know!" },
+          ]}
+          feedbackNote="We especially want to know: do these asking-price estimates match what you see on PF/Bayut? If something looks off, screenshot it and tell us which project/bedroom — that helps us calibrate the model."
+        />
+
         {/* Hero */}
         <div className="mb-6">
           <div className="mb-2 inline-flex items-center gap-1.5 rounded-full bg-accent/15 px-2.5 py-1 text-[10px] font-semibold text-accent">
@@ -703,18 +726,48 @@ function MLSContent() {
           </div>
 
           <div className="flex flex-wrap items-center justify-between gap-3 px-5 py-4">
-            <label className="flex cursor-pointer items-center gap-2">
-              <input
-                type="checkbox"
-                checked={filters.distressOnly}
-                onChange={(e) => update({ distressOnly: e.target.checked })}
-                className="h-4 w-4 accent-accent"
-              />
-              <span className="inline-flex items-center gap-1 text-xs font-medium text-foreground">
-                <AlertTriangle className="h-3 w-3 text-negative" />
-                {t("mls_distress_only")}
-              </span>
-            </label>
+            <div className="flex flex-wrap items-center gap-4">
+              {/* Platform pills — replaces the silently-broken implicit filter */}
+              <div className="flex items-center gap-1.5">
+                <span className="text-[11px] font-semibold uppercase tracking-wider text-muted">
+                  {t("mls_platform")}:
+                </span>
+                {([
+                  { value: "", label: t("mls_all_platforms"), color: "accent" },
+                  { value: "propertyfinder", label: t("mls_platform_pf"), color: "#EF4036" },
+                  { value: "bayut", label: t("mls_platform_bayut"), color: "#00C48C" },
+                ] as const).map((opt) => {
+                  const active = filters.platform === opt.value;
+                  return (
+                    <button
+                      key={opt.value || "all"}
+                      type="button"
+                      onClick={() => update({ platform: opt.value })}
+                      className={`rounded-full border px-2.5 py-1 text-[11px] font-semibold transition-colors ${
+                        active
+                          ? "border-accent bg-accent text-background"
+                          : "border-card-border bg-card-bg text-muted hover:border-accent/50 hover:text-foreground"
+                      }`}
+                    >
+                      {opt.label}
+                    </button>
+                  );
+                })}
+              </div>
+
+              <label className="flex cursor-pointer items-center gap-2">
+                <input
+                  type="checkbox"
+                  checked={filters.distressOnly}
+                  onChange={(e) => update({ distressOnly: e.target.checked })}
+                  className="h-4 w-4 accent-accent"
+                />
+                <span className="inline-flex items-center gap-1 text-xs font-medium text-foreground">
+                  <AlertTriangle className="h-3 w-3 text-negative" />
+                  {t("mls_distress_only")}
+                </span>
+              </label>
+            </div>
             <button
               onClick={askAgent}
               disabled={agentThinking}
@@ -767,6 +820,16 @@ function MLSContent() {
         {/* Results (only shown after agent runs) */}
         {!agentThinking && appliedFilters && (
           <>
+            {/* Prominent sample-listings banner — asking prices are modelled,
+                not scraped. Users should verify on PF/Bayut. */}
+            <div className="mb-5 flex items-start gap-3 rounded-xl border border-accent/25 bg-accent/5 px-4 py-3">
+              <Info className="mt-0.5 h-4 w-4 shrink-0 text-accent" />
+              <div className="text-xs leading-relaxed text-foreground">
+                <span className="font-semibold">{t("mls_model_banner_title")}</span>
+                <p className="mt-0.5 text-muted">{t("mls_model_banner_text")}</p>
+              </div>
+            </div>
+
             {/* Overview Stats */}
             <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
               <StatCard
@@ -825,24 +888,44 @@ function MLSContent() {
 
             {/* Project Groups Grid */}
             <section className="mb-6">
-              <h2 className="mb-4 text-sm font-semibold uppercase tracking-wider text-muted">
-                {t("mls_comparison_title")} ({filteredGroups.length})
-              </h2>
+              <div className="mb-4 flex items-baseline justify-between">
+                <h2 className="text-sm font-semibold uppercase tracking-wider text-muted">
+                  {t("mls_comparison_title")} ({filteredGroups.length})
+                </h2>
+                {filteredGroups.length > 0 && (
+                  <p className="text-xs text-muted">
+                    {t("mls_showing_count", Math.min(visibleCount, filteredGroups.length), filteredGroups.length)}
+                  </p>
+                )}
+              </div>
               {filteredGroups.length === 0 ? (
                 <div className="rounded-xl border border-card-border bg-card-bg px-6 py-12 text-center">
                   <p className="text-sm text-muted">{t("mls_no_results")}</p>
                 </div>
               ) : (
-                <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
-                  {filteredGroups.slice(0, 60).map((g) => (
-                    <GroupCard
-                      key={g.key}
-                      group={g}
-                      expanded={expandedGroup === g.key}
-                      onToggle={() => setExpandedGroup(expandedGroup === g.key ? null : g.key)}
-                    />
-                  ))}
-                </div>
+                <>
+                  <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+                    {filteredGroups.slice(0, visibleCount).map((g) => (
+                      <GroupCard
+                        key={g.key}
+                        group={g}
+                        expanded={expandedGroup === g.key}
+                        onToggle={() => setExpandedGroup(expandedGroup === g.key ? null : g.key)}
+                      />
+                    ))}
+                  </div>
+                  {visibleCount < filteredGroups.length && (
+                    <div className="mt-5 flex justify-center">
+                      <button
+                        onClick={() => setVisibleCount((v) => v + 60)}
+                        className="inline-flex items-center gap-2 rounded-lg border border-accent/40 bg-accent/10 px-5 py-2.5 text-sm font-semibold text-accent transition-colors hover:bg-accent/20"
+                      >
+                        <ChevronDown className="h-4 w-4" />
+                        {t("mls_load_more", Math.min(60, filteredGroups.length - visibleCount), filteredGroups.length - visibleCount)}
+                      </button>
+                    </div>
+                  )}
+                </>
               )}
             </section>
           </>
@@ -1039,7 +1122,7 @@ function GroupCard({
           </div>
         </div>
 
-        <div className="grid grid-cols-2 divide-x divide-card-border">
+        <div className="grid grid-cols-3 divide-x divide-card-border">
           <div className="p-3">
             <p className="text-[10px] font-semibold uppercase tracking-wider text-muted">{t("mls_asking")}</p>
             <p className="mt-1 text-lg font-bold text-foreground">{formatAED(group.askPriceMedian)}</p>
@@ -1048,8 +1131,17 @@ function GroupCard({
             </p>
           </div>
           <div className="p-3">
-            <p className="text-[10px] font-semibold uppercase tracking-wider text-muted">{t("mls_adrec_actual")}</p>
-            <p className="mt-1 text-lg font-bold text-accent">{formatAED(group.adrecMedianPrice)}</p>
+            <p className="text-[10px] font-semibold uppercase tracking-wider text-muted">
+              {t("mls_recent_market", group.recentWindowMonths)}
+            </p>
+            <p className="mt-1 text-lg font-bold text-accent">{formatAED(group.recentMedianPrice)}</p>
+            <p className="text-[10px] text-muted">
+              {group.recentTxCount} {t("transactions_label")}
+            </p>
+          </div>
+          <div className="p-3">
+            <p className="text-[10px] font-semibold uppercase tracking-wider text-muted">{t("mls_historical_24mo")}</p>
+            <p className="mt-1 text-lg font-bold text-muted">{formatAED(group.adrecMedianPrice)}</p>
             <p className="text-[10px] text-muted">
               {group.adrecTxCount} {t("transactions_label")}
             </p>
@@ -1145,6 +1237,14 @@ function GroupCard({
               <ArrowUpRight className="h-3 w-3" />
             </a>
           </div>
+          <a
+            href={`/mls/report?project=${encodeURIComponent(group.project)}&bedrooms=${group.bedrooms}`}
+            className="mt-2 flex items-center justify-center gap-1.5 rounded-lg border border-accent/40 bg-accent/10 py-2 text-[11px] font-semibold text-accent transition-colors hover:bg-accent/20"
+          >
+            <FileText className="h-3 w-3" />
+            {t("mls_generate_report")}
+            <ArrowRight className="h-3 w-3" />
+          </a>
         </div>
       )}
     </div>
