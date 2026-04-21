@@ -301,6 +301,8 @@ type TranslationStrings = {
   mls_platform_bayut: string;
   mls_generate_report: string;
   mls_report_cta: string;
+  mls_showing_count: string;
+  mls_load_more: string;
 };
 
 const en: TranslationStrings = {
@@ -592,6 +594,8 @@ const en: TranslationStrings = {
   mls_platform_bayut: "Bayut",
   mls_generate_report: "Investor Report",
   mls_report_cta: "Generate a one-page investor report for this project",
+  mls_showing_count: "Showing {0} of {1}",
+  mls_load_more: "Load {0} more ({1} remaining)",
 };
 
 const ar: TranslationStrings = {
@@ -883,6 +887,8 @@ const ar: TranslationStrings = {
   mls_platform_bayut: "Bayut",
   mls_generate_report: "تقرير المستثمر",
   mls_report_cta: "إنشاء تقرير من صفحة واحدة لهذا المشروع",
+  mls_showing_count: "عرض {0} من {1}",
+  mls_load_more: "تحميل {0} إضافية (متبقي {1})",
 };
 
 const ru: TranslationStrings = {
@@ -1174,6 +1180,8 @@ const ru: TranslationStrings = {
   mls_platform_bayut: "Bayut",
   mls_generate_report: "Отчёт инвестора",
   mls_report_cta: "Создать одностраничный отчёт по проекту",
+  mls_showing_count: "Показано {0} из {1}",
+  mls_load_more: "Загрузить ещё {0} (осталось {1})",
 };
 
 export const translations: Record<Locale, TranslationStrings> = { en, ar, ru };

@@ -42,6 +42,7 @@ import {
   Loader2,
   Sparkles,
   FileText,
+  ChevronDown,
 } from "lucide-react";
 
 interface AgentStatus {
@@ -109,6 +110,7 @@ function MLSContent() {
   const [filters, setFilters] = useState<MLSFilterState>(defaultMLSFilters);
   const [appliedFilters, setAppliedFilters] = useState<MLSFilterState | null>(null);
   const [expandedGroup, setExpandedGroup] = useState<string | null>(null);
+  const [visibleCount, setVisibleCount] = useState(60);
   const [agentStatus, setAgentStatus] = useState<AgentStatus | null>(null);
   const [agentThinking, setAgentThinking] = useState(false);
   const [agentSteps, setAgentSteps] = useState<AgentStep[]>([]);
@@ -121,10 +123,12 @@ function MLSContent() {
     let cancelled = false;
     async function loadData() {
       try {
+        // no-cache so fresh data propagates the moment the on-disk JSON
+        // changes (ETag/304 keeps the round-trip cheap when it hasn't).
         const [txRes, hierRes, statusRes] = await Promise.all([
-          fetch("/data/transactions.json"),
-          fetch("/data/hierarchy.json"),
-          fetch("/api/mls/status"),
+          fetch("/data/transactions.json", { cache: "no-cache" }),
+          fetch("/data/hierarchy.json", { cache: "no-cache" }),
+          fetch("/api/mls/status", { cache: "no-store" }),
         ]);
         if (!txRes.ok) throw new Error("Failed to load transaction data");
         if (!hierRes.ok) throw new Error("Failed to load hierarchy data");
@@ -269,6 +273,7 @@ function MLSContent() {
         if (agentRunRef.current !== runId) return;
         setAppliedFilters({ ...targetFilters });
         setAgentThinking(false);
+        setVisibleCount(60); // reset pagination on every new result set
       }, elapsed + 250);
     },
     [allGroups, t]
@@ -857,24 +862,44 @@ function MLSContent() {
 
             {/* Project Groups Grid */}
             <section className="mb-6">
-              <h2 className="mb-4 text-sm font-semibold uppercase tracking-wider text-muted">
-                {t("mls_comparison_title")} ({filteredGroups.length})
-              </h2>
+              <div className="mb-4 flex items-baseline justify-between">
+                <h2 className="text-sm font-semibold uppercase tracking-wider text-muted">
+                  {t("mls_comparison_title")} ({filteredGroups.length})
+                </h2>
+                {filteredGroups.length > 0 && (
+                  <p className="text-xs text-muted">
+                    {t("mls_showing_count", Math.min(visibleCount, filteredGroups.length), filteredGroups.length)}
+                  </p>
+                )}
+              </div>
               {filteredGroups.length === 0 ? (
                 <div className="rounded-xl border border-card-border bg-card-bg px-6 py-12 text-center">
                   <p className="text-sm text-muted">{t("mls_no_results")}</p>
                 </div>
               ) : (
-                <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
-                  {filteredGroups.slice(0, 60).map((g) => (
-                    <GroupCard
-                      key={g.key}
-                      group={g}
-                      expanded={expandedGroup === g.key}
-                      onToggle={() => setExpandedGroup(expandedGroup === g.key ? null : g.key)}
-                    />
-                  ))}
-                </div>
+                <>
+                  <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+                    {filteredGroups.slice(0, visibleCount).map((g) => (
+                      <GroupCard
+                        key={g.key}
+                        group={g}
+                        expanded={expandedGroup === g.key}
+                        onToggle={() => setExpandedGroup(expandedGroup === g.key ? null : g.key)}
+                      />
+                    ))}
+                  </div>
+                  {visibleCount < filteredGroups.length && (
+                    <div className="mt-5 flex justify-center">
+                      <button
+                        onClick={() => setVisibleCount((v) => v + 60)}
+                        className="inline-flex items-center gap-2 rounded-lg border border-accent/40 bg-accent/10 px-5 py-2.5 text-sm font-semibold text-accent transition-colors hover:bg-accent/20"
+                      >
+                        <ChevronDown className="h-4 w-4" />
+                        {t("mls_load_more", Math.min(60, filteredGroups.length - visibleCount), filteredGroups.length - visibleCount)}
+                      </button>
+                    </div>
+                  )}
+                </>
               )}
             </section>
           </>

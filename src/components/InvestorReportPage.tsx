@@ -72,7 +72,8 @@ function ReportContent({ project, bedrooms }: Props) {
     let cancelled = false;
     async function load() {
       try {
-        const txRes = await fetch("/data/transactions.json");
+        // no-cache so the report reflects the latest transactions on disk.
+        const txRes = await fetch("/data/transactions.json", { cache: "no-cache" });
         if (!txRes.ok) throw new Error("Failed to load transaction data");
         const txJson = await txRes.json();
         if (cancelled) return;

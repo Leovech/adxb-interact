@@ -16,6 +16,30 @@ interface ParseResult {
   remainingQuery: string; // what's left for text search
 }
 
+/**
+ * Normalize a string for fuzzy matching:
+ *  - lowercase
+ *  - strip diacritics (Saadiyat vs Saʿādiyāt, Muhammad vs Muḥammad)
+ *  - strip quotes, dashes, underscores
+ *  - collapse whitespace
+ * Keeps non-Latin scripts (Arabic, Russian, CJK) intact — the NFD/replace
+ * dance only affects combining marks, not the base glyph.
+ */
+export function normalize(s: string): string {
+  return s
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[̀-ͯ]/g, "") // combining diacritical marks
+    // Standalone transliteration letters (ʿayn, ʾalif, etc.) aren't
+    // combining marks — strip them to a space so "Saʿādiyāt" normalises
+    // to the same tokens as "Saadiyat".
+    .replace(/[ʿʾʻʼʽ]/g, " ")
+    .replace(/[‘’'`"“”]/g, "")
+    .replace(/[-_/]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
 // Keyword maps for property types
 const propertyTypeKeywords: Record<string, string> = {
   apartment: "Apartment",
@@ -149,7 +173,8 @@ export function parseSmartSearch(
 
   const filters: Partial<FilterState> = {};
   const matchedTerms: string[] = [];
-  let remaining = query.toLowerCase().trim();
+  // Normalize so "sa'adiyat", "saadiyat", and "Saadiyat" all match.
+  let remaining = normalize(query);
 
   // Helper: try to match and consume a term from remaining
   function tryMatch(
@@ -211,20 +236,18 @@ export function parseSmartSearch(
     filters.assetClass = value;
   });
 
-  // 6. Match districts (try longest names first)
+  // 6. Match districts (try longest names first, diacritic-folded)
   const districtNames = hierarchy.districts
-    .map((d) => d.name)
-    .sort((a, b) => b.length - a.length);
+    .map((d) => ({ name: d.name, norm: normalize(d.name) }))
+    .sort((a, b) => b.norm.length - a.norm.length);
 
-  for (const name of districtNames) {
-    const nameLower = name.toLowerCase();
-    const idx = remaining.indexOf(nameLower);
+  for (const d of districtNames) {
+    const idx = remaining.indexOf(d.norm);
     if (idx !== -1) {
-      filters.district = name;
-      matchedTerms.push(nameLower);
+      filters.district = d.name;
+      matchedTerms.push(d.norm);
       remaining =
-        remaining.substring(0, idx) +
-        remaining.substring(idx + nameLower.length);
+        remaining.substring(0, idx) + remaining.substring(idx + d.norm.length);
       remaining = remaining.replace(/\s+/g, " ").trim();
       break;
     }
@@ -232,21 +255,19 @@ export function parseSmartSearch(
 
   // 7. Match projects (try longest names first, only if no district matched or after district)
   const projectNames = hierarchy.projects
-    .map((p) => ({ name: p.name, district: p.district }))
-    .sort((a, b) => b.name.length - a.name.length);
+    .map((p) => ({ name: p.name, district: p.district, norm: normalize(p.name) }))
+    .sort((a, b) => b.norm.length - a.norm.length);
 
   for (const proj of projectNames) {
-    const projLower = proj.name.toLowerCase();
-    const idx = remaining.indexOf(projLower);
+    const idx = remaining.indexOf(proj.norm);
     if (idx !== -1) {
       filters.project = proj.name;
       if (!filters.district) {
         filters.district = proj.district;
       }
-      matchedTerms.push(projLower);
+      matchedTerms.push(proj.norm);
       remaining =
-        remaining.substring(0, idx) +
-        remaining.substring(idx + projLower.length);
+        remaining.substring(0, idx) + remaining.substring(idx + proj.norm.length);
       remaining = remaining.replace(/\s+/g, " ").trim();
       break;
     }
@@ -263,16 +284,27 @@ export function parseSmartSearch(
 }
 
 /**
- * Merge smart search results into existing filters
+ * Merge smart search results into existing filters. Previously this reset to
+ * defaultFilters before applying parsed fields, which silently wiped the
+ * user's date range / price range / any filters they had set by hand. Users
+ * expect smart search to ADD context to what they already picked, not
+ * replace it — so we start from `currentFilters` and only overwrite fields
+ * the parser actually recognised. `defaultFilters` is still referenced so
+ * callers can import a known-clean state if they want.
  */
 export function applySmartSearch(
   currentFilters: FilterState,
   parsed: ParseResult
 ): FilterState {
-  const next = { ...defaultFilters };
+  // Changing district auto-resets project in the manual update() path on the
+  // Dashboard; we mirror that here so the parsed district doesn't leave a
+  // stale project tag hanging around.
+  const next: FilterState = { ...currentFilters };
 
-  // Apply parsed filters
-  if (parsed.filters.district) next.district = parsed.filters.district;
+  if (parsed.filters.district && parsed.filters.district !== next.district) {
+    next.district = parsed.filters.district;
+    next.project = "";
+  }
   if (parsed.filters.project) next.project = parsed.filters.project;
   if (parsed.filters.propertyType) next.propertyType = parsed.filters.propertyType;
   if (parsed.filters.status) next.status = parsed.filters.status;
@@ -280,10 +312,24 @@ export function applySmartSearch(
   if (parsed.filters.assetClass) next.assetClass = parsed.filters.assetClass;
   if (parsed.filters.bedrooms) next.bedrooms = parsed.filters.bedrooms;
 
-  // Keep remaining text as search query for fuzzy matching
-  if (parsed.remainingQuery) {
-    next.searchQuery = parsed.remainingQuery;
-  }
+  // Free-text remainder goes into searchQuery; blank it if nothing useful
+  // remains so stale text doesn't sit behind new filters.
+  next.searchQuery = parsed.remainingQuery || "";
 
+  return next;
+}
+
+// Keep an explicit "reset + apply parsed" helper for the rare caller that
+// DOES want the old behavior (e.g. a "New search" power-user button).
+export function resetAndApplySmartSearch(parsed: ParseResult): FilterState {
+  const next = { ...defaultFilters };
+  if (parsed.filters.district) next.district = parsed.filters.district;
+  if (parsed.filters.project) next.project = parsed.filters.project;
+  if (parsed.filters.propertyType) next.propertyType = parsed.filters.propertyType;
+  if (parsed.filters.status) next.status = parsed.filters.status;
+  if (parsed.filters.sequence) next.sequence = parsed.filters.sequence;
+  if (parsed.filters.assetClass) next.assetClass = parsed.filters.assetClass;
+  if (parsed.filters.bedrooms) next.bedrooms = parsed.filters.bedrooms;
+  if (parsed.remainingQuery) next.searchQuery = parsed.remainingQuery;
   return next;
 }

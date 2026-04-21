@@ -33,9 +33,12 @@ function DashboardContent() {
 
     async function loadData() {
       try {
+        // `cache: "no-cache"` forces the browser to revalidate with the
+        // server; unchanged files return a cheap 304 via ETag but any
+        // freshly-processed transactions.json is picked up immediately.
         const [txRes, hierRes] = await Promise.all([
-          fetch("/data/transactions.json"),
-          fetch("/data/hierarchy.json"),
+          fetch("/data/transactions.json", { cache: "no-cache" }),
+          fetch("/data/hierarchy.json", { cache: "no-cache" }),
         ]);
 
         if (!txRes.ok) throw new Error("Failed to load transaction data");

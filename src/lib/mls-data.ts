@@ -493,16 +493,25 @@ export function parseMLSSmartSearch(
   };
 }
 
+/**
+ * Merge the parsed smart-search filters into the user's current MLS filter
+ * state. Previously this reset everything to defaults (except distressOnly),
+ * which silently dropped the user's platform pick, property type, etc. We
+ * now preserve the current state and only overwrite fields the parser hit.
+ */
 export function applyMLSSmartSearch(
   current: MLSFilterState,
   parsed: MLSSmartSearchPreview
 ): MLSFilterState {
-  const next: MLSFilterState = { ...defaultMLSFilters, distressOnly: current.distressOnly };
-  if (parsed.filters.district) next.district = parsed.filters.district;
+  const next: MLSFilterState = { ...current };
+  if (parsed.filters.district && parsed.filters.district !== next.district) {
+    next.district = parsed.filters.district;
+    next.project = ""; // auto-reset project when district changes
+  }
   if (parsed.filters.project) next.project = parsed.filters.project;
   if (parsed.filters.propertyType) next.propertyType = parsed.filters.propertyType;
   if (parsed.filters.bedrooms) next.bedrooms = parsed.filters.bedrooms;
-  if (parsed.remainingQuery) next.searchQuery = parsed.remainingQuery;
+  next.searchQuery = parsed.remainingQuery || "";
   return next;
 }
 
