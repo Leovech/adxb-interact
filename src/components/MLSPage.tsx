@@ -10,6 +10,7 @@ import {
   decodeTransactions,
 } from "@/data/abu-dhabi";
 import { LanguageProvider, useT } from "@/i18n/LanguageContext";
+import PageGuide from "@/components/PageGuide";
 import {
   buildListingGroups,
   buildListingUrl,
@@ -408,6 +409,21 @@ function MLSContent() {
     <>
       <Header />
       <main className="mx-auto w-full max-w-[1440px] flex-1 px-4 py-6 lg:px-8">
+        <PageGuide
+          storageKey="mls"
+          title="MLS Compare — Asking Prices vs Actual Sales (DEMO)"
+          description="This page compares what sellers are asking on Property Finder & Bayut against actual closed-sale data from ADREC. It's a DEMO — asking prices shown here are modelled, not live-scraped, but the deep-links take you straight to real PF/Bayut listings so you can verify. We need your feedback!"
+          steps={[
+            { icon: "🤖", text: "Type a natural-language query in the search box (e.g. 'Pixel 1br Al Reem') or use the dropdowns, then click 'Ask the Agent' to run the comparison." },
+            { icon: "📊", text: "Results show project cards with three columns: Asking (modelled), Recent Market (last 6-12mo ADREC sales), and 24-month historical — so you can see how fast prices are moving." },
+            { icon: "🔴", text: "Cards flagged with 'Distress' have listings priced 5%+ below the recent market rate — potential bargains worth checking on PF/Bayut." },
+            { icon: "🔗", text: "Expand any card and click 'Open on Property Finder' or 'Open on Bayut' to see LIVE listings matching that project + bedroom config." },
+            { icon: "📄", text: "Click 'Investor Report' on an expanded card to generate a one-page brief with yield model, price trend, and a buy/watch/avoid verdict." },
+            { icon: "💬", text: "THIS IS A DEMO — Do the numbers feel right? Is the comparison useful? What's missing? Let us know!" },
+          ]}
+          feedbackNote="We especially want to know: do these asking-price estimates match what you see on PF/Bayut? If something looks off, screenshot it and tell us which project/bedroom — that helps us calibrate the model."
+        />
+
         {/* Hero */}
         <div className="mb-6">
           <div className="mb-2 inline-flex items-center gap-1.5 rounded-full bg-accent/15 px-2.5 py-1 text-[10px] font-semibold text-accent">

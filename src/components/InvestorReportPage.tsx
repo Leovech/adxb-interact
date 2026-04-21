@@ -15,6 +15,7 @@
 import { useEffect, useMemo, useState } from "react";
 import Header from "@/components/Header";
 import { LanguageProvider } from "@/i18n/LanguageContext";
+import PageGuide from "@/components/PageGuide";
 import {
   Transaction,
   decodeTransactions,
@@ -175,6 +176,20 @@ function ReportContent({ project, bedrooms }: Props) {
       </div>
 
       <main className="mx-auto w-full max-w-4xl flex-1 px-4 py-6 lg:px-0">
+        <PageGuide
+          storageKey="report"
+          title="Investor Property Report (DEMO)"
+          description="This is a DEMO one-page investment brief generated from ADREC closed-sale data + modelled MLS listings. It gives you a snapshot: market position, price trend, rental yield estimate, distress deals, and an auto-generated buy/watch/avoid verdict. We need your feedback to make this useful for real investment decisions!"
+          steps={[
+            { icon: "📊", text: "The top section shows the verdict (Buy / Watch / Avoid) and the key stats: asking vs recent-market median, premium %, and estimated rental yield." },
+            { icon: "📈", text: "Scroll down for the 12-month price trend chart, liquidity metrics (how many units trade per month), and the best deals currently below market." },
+            { icon: "🖨️", text: "Click 'Print / Save as PDF' to get a clean one-page brief you can share with clients or use in presentations. The guide and toolbar are hidden in the PDF." },
+            { icon: "🔗", text: "Use the PF / Bayut buttons at the bottom to browse live listings for this exact project + bedroom configuration." },
+            { icon: "💬", text: "THIS IS A DEMO — Is this the kind of report you'd actually use? What numbers matter most? What's missing? Tell us!" },
+          ]}
+          feedbackNote="Would you send this to a client? What would you add or remove? Does the yield estimate feel realistic for this area? All feedback is gold."
+        />
+
         {/* Toolbar (hidden in print) */}
         <div className="mb-6 flex flex-wrap items-center justify-between gap-3 print:hidden">
           <a

@@ -12,6 +12,7 @@ import MapView from "@/components/MapView";
 import PriceHistory from "@/components/PriceHistory";
 import ContactSection from "@/components/ContactSection";
 import ChatWidget from "@/components/ChatWidget";
+import PageGuide from "@/components/PageGuide";
 import {
   Transaction,
   Hierarchy,
@@ -111,6 +112,21 @@ function DashboardContent() {
     <>
       <Header />
       <main className="mx-auto w-full max-w-[1440px] flex-1 px-4 py-6 lg:px-8">
+        <PageGuide
+          storageKey="dashboard"
+          title="Welcome to ADXBInteract — Abu Dhabi Real Estate Dashboard"
+          description="This is a DEMO of a real estate intelligence platform for Abu Dhabi. It shows live ADREC transaction data — prices, trends, maps, and project analytics. We're building this for brokers & investors and need YOUR feedback to shape the product."
+          steps={[
+            { icon: "🔍", text: "Use the smart search bar or filters at the top to narrow by district, project, property type, bedrooms, date range, and more." },
+            { icon: "📊", text: "Scroll down to see KPI cards, price charts, trendy projects, a map view, and a full transaction table — all update live as you filter." },
+            { icon: "🏠", text: "Click 'MLS Compare' in the nav to see how asking prices on Property Finder & Bayut stack up against real closed-sale data." },
+            { icon: "📄", text: "From MLS Compare, open the 'Investor Report' on any project card for a one-page brief you can print or share as PDF." },
+            { icon: "🌐", text: "Try switching language (EN / AR / RU) and dark/light mode — everything adapts, including RTL layout for Arabic." },
+            { icon: "💬", text: "This is a DEMO — please tell us what's useful, what's confusing, and what you'd want added. Your feedback shapes the product!" },
+          ]}
+          feedbackNote="Please share what you think — does this data help your investment decisions? What's missing? What would you pay for? Screenshot anything confusing and send it over."
+        />
+
         {/* Hero */}
         <div className="mb-6" id="dashboard">
           <h1 className="text-2xl font-bold tracking-tight text-foreground">
