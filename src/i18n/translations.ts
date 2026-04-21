@@ -16,6 +16,10 @@ type TranslationStrings = {
   // Header
   nav_dashboard: string;
   nav_trends: string;
+  nav_market_analysis: string;
+  nav_account: string;
+  nav_sign_in: string;
+  nav_sign_up: string;
   nav_trendy: string;
   nav_map: string;
   nav_transactions: string;
@@ -313,6 +317,10 @@ const en: TranslationStrings = {
   // Header
   nav_dashboard: "Dashboard",
   nav_trends: "Trends",
+  nav_market_analysis: "Market Analysis",
+  nav_account: "Account",
+  nav_sign_in: "Sign in",
+  nav_sign_up: "Sign up",
   nav_trendy: "Trendy",
   nav_map: "Map",
   nav_transactions: "Transactions",
@@ -610,6 +618,10 @@ const ar: TranslationStrings = {
   // Header
   nav_dashboard: "لوحة المعلومات",
   nav_trends: "الاتجاهات",
+  nav_market_analysis: "تحليل السوق",
+  nav_account: "الحساب",
+  nav_sign_in: "تسجيل الدخول",
+  nav_sign_up: "إنشاء حساب",
   nav_trendy: "المشاريع الرائجة",
   nav_map: "الخريطة",
   nav_transactions: "المعاملات",
@@ -907,6 +919,10 @@ const ru: TranslationStrings = {
   // Header
   nav_dashboard: "Панель",
   nav_trends: "Тренды",
+  nav_market_analysis: "Анализ рынка",
+  nav_account: "Аккаунт",
+  nav_sign_in: "Войти",
+  nav_sign_up: "Регистрация",
   nav_trendy: "Популярные",
   nav_map: "Карта",
   nav_transactions: "Сделки",
