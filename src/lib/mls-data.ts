@@ -137,28 +137,29 @@ export function buildListingUrl(
   project: string,
   district: string,
   bedrooms: number,
-  propertyType: string = "Apartment"
+  _propertyType: string = "Apartment"
 ): string {
-  // Deep-link to each platform's search results so the user can verify live
-  // listings against our sample. URLs use the documented query params these
-  // platforms expose on their search pages.
+  // Deep-link to each platform's search page so the user can verify live
+  // inventory against our model.
   //
-  // Property Finder requires l=6 (Abu Dhabi emirate location ID) to scope
-  // results — without it, free-text searches bleed into Dubai listings.
-  // t=1 = residential apartments, t=35 = villas/houses.
-  const isVilla =
-    propertyType === "Villa" ||
-    propertyType === "Townhouse" ||
-    propertyType === "Duplex";
-
+  // PF URL strategy (as of 2026):
+  //   - `c=1` = buy
+  //   - Bedroom filters: `bf=` / `bt=` (min/max)
+  //   - `q=` is a free-text search that PF resolves against their own
+  //     location tree. Including the district + "Abu Dhabi" is critical —
+  //     without it, PF often matches Dubai projects with similar names
+  //     or returns zero results.
+  //   - We deliberately drop `l=` (location ID) and `t=` (property type
+  //     code) because PF periodically renumbers these and broken IDs
+  //     produce empty search results. The text query + "Abu Dhabi" is
+  //     more resilient.
   if (platform === "propertyfinder") {
-    const typeParam = isVilla ? "&t=35" : "&t=1";
-    const q = encodeURIComponent(project);
+    const q = encodeURIComponent(`${project} ${district} Abu Dhabi`);
     const bedParam = bedrooms > 0 ? `&bf=${bedrooms}&bt=${bedrooms}` : "";
-    return `https://www.propertyfinder.ae/en/search?l=6&c=1${typeParam}${bedParam}&q=${q}`;
+    return `https://www.propertyfinder.ae/en/search?c=1${bedParam}&q=${q}`;
   }
-  // Bayut: the /to-buy/property/abu-dhabi/ path already scopes to Abu Dhabi.
-  // search_query narrows by project+district, beds_min/max filter bedrooms.
+
+  // Bayut: /to-buy/property/abu-dhabi/ already scopes to Abu Dhabi.
   const q = encodeURIComponent(`${project} ${district}`);
   const bedParam =
     bedrooms > 0 ? `&beds_min=${bedrooms}&beds_max=${bedrooms}` : "";

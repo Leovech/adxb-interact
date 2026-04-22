@@ -324,7 +324,7 @@ const en: TranslationStrings = {
   nav_trendy: "Trendy",
   nav_map: "Map",
   nav_transactions: "Transactions",
-  nav_mls: "MLS Compare",
+  nav_mls: "Listings vs Sales",
   demo_banner: "DEMO",
   created_by: "Created by",
   brand_name: "Sand Square Group",
@@ -538,8 +538,8 @@ const en: TranslationStrings = {
   smart_search_examples: "Try: 'villa ready yas island 3br' or 'apartment off-plan reem island'",
 
   // MLS Page
-  mls_title: "MLS Listings vs Actual Transactions",
-  mls_subtitle: "Compare asking prices on Property Finder & Bayut against real ADREC transaction data",
+  mls_title: "Listings vs Sales — What sellers ask vs what actually closed",
+  mls_subtitle: "Compare what's listed on Property Finder & Bayut against real ADREC closed-sale prices",
   mls_beta_badge: "BETA",
   mls_disclaimer_title: "Demo listings",
   mls_disclaimer_text: "Property Finder and Bayut do not offer public APIs, so individual ad URLs aren't available. Listings shown are samples derived from ADREC transaction medians; 'Search on PF/Bayut' buttons open a pre-filtered search page on each platform so you can browse live inventory matching the flagged unit. Direct ad-level deep-linking requires a paid MLS partnership.",
@@ -625,7 +625,7 @@ const ar: TranslationStrings = {
   nav_trendy: "المشاريع الرائجة",
   nav_map: "الخريطة",
   nav_transactions: "المعاملات",
-  nav_mls: "مقارنة الإعلانات",
+  nav_mls: "الإعلانات مقابل المبيعات",
   demo_banner: "نسخة تجريبية",
   created_by: "من إنشاء",
   brand_name: "ساند سكوير جروب",
@@ -839,8 +839,8 @@ const ar: TranslationStrings = {
   smart_search_examples: "جرب: 'فيلا جاهز جزيرة ياس 3 غرف' أو 'شقة على الخارطة جزيرة الريم'",
 
   // MLS Page
-  mls_title: "إعلانات MLS مقابل المعاملات الفعلية",
-  mls_subtitle: "قارن أسعار الطلب في Property Finder و Bayut مع بيانات المعاملات الفعلية من ADREC",
+  mls_title: "الإعلانات مقابل المبيعات — ما يطلبه البائعون مقابل ما تم فعلاً",
+  mls_subtitle: "قارن أسعار الإعلانات في Property Finder و Bayut مع أسعار البيع الفعلية من ADREC",
   mls_beta_badge: "تجريبي",
   mls_disclaimer_title: "إعلانات تجريبية",
   mls_disclaimer_text: "لا توفر Property Finder و Bayut واجهات برمجية عامة، لذا لا تتوفر روابط لإعلانات فردية. الإعلانات المعروضة عينات مشتقة من وسطاء معاملات ADREC؛ أزرار 'البحث في PF/Bayut' تفتح صفحة بحث مفلترة مسبقاً على كل منصة لتصفح المعروض الحي المطابق للوحدة. يتطلب الربط المباشر للإعلانات شراكة MLS مدفوعة.",
@@ -926,7 +926,7 @@ const ru: TranslationStrings = {
   nav_trendy: "Популярные",
   nav_map: "Карта",
   nav_transactions: "Сделки",
-  nav_mls: "Сравнение MLS",
+  nav_mls: "Объявления vs Сделки",
   demo_banner: "ДЕМО",
   created_by: "Создано",
   brand_name: "Sand Square Group",
@@ -1140,8 +1140,8 @@ const ru: TranslationStrings = {
   smart_search_examples: "Попробуйте: 'вилла готово яс айленд 3 спальни' или 'квартира строящиеся рим айленд'",
 
   // MLS Page
-  mls_title: "MLS объявления vs реальные сделки",
-  mls_subtitle: "Сравните цены на Property Finder и Bayut с реальными данными сделок ADREC",
+  mls_title: "Объявления vs Сделки — что просят vs за сколько реально продали",
+  mls_subtitle: "Сравните листинги на Property Finder и Bayut с реальными ценами закрытых сделок ADREC",
   mls_beta_badge: "БЕТА",
   mls_disclaimer_title: "Демо-объявления",
   mls_disclaimer_text: "Property Finder и Bayut не предоставляют публичных API, поэтому прямые ссылки на конкретные объявления недоступны. Показанные объявления — образцы, построенные на медианах сделок ADREC; кнопки 'Искать на PF/Bayut' открывают предварительно отфильтрованную страницу поиска на каждой платформе, чтобы посмотреть живое предложение по данной конфигурации. Прямые ссылки на конкретные объявления требуют платного MLS-партнёрства.",

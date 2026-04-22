@@ -157,28 +157,39 @@ function buildReasoning(
   const bullets: ReasoningBullet[] = [];
   const br = bedroomLabel(s.bedrooms);
 
-  // Price
+  // Estimated asking price on PF/Bayut (typically +10-15% above closed-sale median)
+  const estAskingLow = Math.round(s.projectMedianPrice * 1.05 / 1000) * 1000;
+  const estAskingHigh = Math.round(s.projectMedianPrice * 1.20 / 1000) * 1000;
+
+  // Price — make it crystal clear this is CLOSED-SALE data with negotiation guidance
   if (s.priceDiscountPct >= 5 && s.areaBedroomsMedianPrice > 0) {
     bullets.push({
       kind: "price",
       text:
-        `${br} in ${s.project} trades at ${formatAED(s.projectMedianPrice)}, ` +
-        `vs ${formatAED(s.areaBedroomsMedianPrice)} area average for ${br} ` +
-        `(-${s.priceDiscountPct.toFixed(1)}% discount).`,
+        `Recent closed sales for ${br} in ${s.project}: ${formatAED(s.projectMedianPrice)} (median). ` +
+        `That's ${s.priceDiscountPct.toFixed(1)}% below the ${s.district} area median of ` +
+        `${formatAED(s.areaBedroomsMedianPrice)}.`,
+    });
+    bullets.push({
+      kind: "price",
+      text:
+        `Expect sellers on PF/Bayut to list around ${formatAED(estAskingLow)}–${formatAED(estAskingHigh)}. ` +
+        `Negotiate toward ${formatAED(s.projectMedianPrice)} — that's what units actually close at.`,
     });
   } else if (s.priceDiscountPct <= -10) {
     bullets.push({
       kind: "price",
       text:
-        `${br} here is ${Math.abs(s.priceDiscountPct).toFixed(1)}% more expensive ` +
-        `than the ${s.district} area average — a scarcity or prestige premium.`,
+        `${br} here sells at ${formatAED(s.projectMedianPrice)} (closed sales) — ` +
+        `${Math.abs(s.priceDiscountPct).toFixed(1)}% above the ${s.district} area average. ` +
+        `Scarcity or prestige premium.`,
     });
   } else {
     bullets.push({
       kind: "price",
       text:
-        `${br} in ${s.project} sells at ${formatAED(s.projectMedianPrice)}, ` +
-        `in line with the ${s.district} area average.`,
+        `Recent closed sales: ${formatAED(s.projectMedianPrice)}, in line with the ${s.district} average. ` +
+        `PF/Bayut asking will be higher — aim to negotiate toward this closed-sale level.`,
     });
   }
 

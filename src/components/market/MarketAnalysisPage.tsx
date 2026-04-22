@@ -404,8 +404,8 @@ function RecommendationCard({ rec }: { rec: Recommendation }) {
           <p className="mb-3 text-[10px] font-bold uppercase tracking-wider text-muted">
             Signals
           </p>
-          <Signal label="Project median" value={formatAED(rec.signals.projectMedianPrice)} />
-          <Signal label="Area median" value={formatAED(rec.signals.areaBedroomsMedianPrice)} />
+          <Signal label="Closed-sale median" value={formatAED(rec.signals.projectMedianPrice)} />
+          <Signal label="Area closed median" value={formatAED(rec.signals.areaBedroomsMedianPrice)} />
           <Signal
             label="Discount"
             value={`${rec.signals.priceDiscountPct >= 0 ? "-" : "+"}${Math.abs(rec.signals.priceDiscountPct).toFixed(1)}%`}
