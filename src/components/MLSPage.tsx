@@ -11,6 +11,7 @@ import {
 } from "@/data/abu-dhabi";
 import { LanguageProvider, useT } from "@/i18n/LanguageContext";
 import PageGuide from "@/components/PageGuide";
+import ResultsSummary from "@/components/ResultsSummary";
 import {
   buildListingGroups,
   buildListingUrl,
@@ -861,6 +862,9 @@ function MLSContent() {
                 sub={t("mls_listings_label")}
               />
             </div>
+
+            {/* Results Summary — price extremes + type/BR breakdown */}
+            <ResultsSummary groups={filteredGroups} />
 
             {/* Distress Deals */}
             {distressListings.length > 0 && (
