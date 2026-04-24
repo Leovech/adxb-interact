@@ -294,13 +294,27 @@ export default function FilterPanel({
 
   const buildReportUrl = (f: FilterState) => {
     const params = new URLSearchParams();
-    if (f.district) params.set("district", f.district);
-    if (f.project) params.set("project", f.project);
-    if (f.propertyType) params.set("propertyType", f.propertyType);
-    if (f.bedrooms) params.set("bedrooms", f.bedrooms);
-    if (f.status) params.set("status", f.status);
-    if (f.sequence) params.set("sequence", f.sequence);
-    if (f.assetClass) params.set("assetClass", f.assetClass);
+    const fields: [string, string][] = [
+      ["district", f.district],
+      ["project", f.project],
+      ["propertyType", f.propertyType],
+      ["bedrooms", f.bedrooms],
+      ["status", f.status],
+      ["sequence", f.sequence],
+      ["assetClass", f.assetClass],
+      ["searchQuery", f.searchQuery],
+      ["priceMin", f.priceMin],
+      ["priceMax", f.priceMax],
+      ["sizeMin", f.sizeMin],
+      ["sizeMax", f.sizeMax],
+      ["rateMin", f.rateMin],
+      ["rateMax", f.rateMax],
+      ["dateFrom", f.dateFrom],
+      ["dateTo", f.dateTo],
+    ];
+    for (const [k, v] of fields) {
+      if (v) params.set(k, v);
+    }
     if (f.datePreset && f.datePreset !== "all_time") params.set("datePreset", f.datePreset);
     return `/dashboard/report?${params.toString()}`;
   };

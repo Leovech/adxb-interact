@@ -45,7 +45,16 @@ interface Props {
   status: string;
   sequence: string;
   assetClass: string;
+  searchQuery: string;
   datePreset: string;
+  dateFrom: string;
+  dateTo: string;
+  priceMin: string;
+  priceMax: string;
+  sizeMin: string;
+  sizeMax: string;
+  rateMin: string;
+  rateMax: string;
   offerPrice?: string;
   offerBR?: string;
   offerSize?: string;
@@ -124,7 +133,16 @@ function DashboardReportContent(props: Props) {
       status: props.status,
       sequence: props.sequence,
       assetClass: props.assetClass,
+      searchQuery: props.searchQuery,
       datePreset: (props.datePreset || "all_time") as DatePreset,
+      dateFrom: props.dateFrom,
+      dateTo: props.dateTo,
+      priceMin: props.priceMin,
+      priceMax: props.priceMax,
+      sizeMin: props.sizeMin,
+      sizeMax: props.sizeMax,
+      rateMin: props.rateMin,
+      rateMax: props.rateMax,
     }),
     [props]
   );
@@ -220,7 +238,29 @@ function DashboardReportContent(props: Props) {
   if (props.bedrooms) filterParts.push(brLabel(props.bedrooms));
   if (props.status) filterParts.push(props.status);
   if (props.sequence) filterParts.push(props.sequence);
+  if (props.searchQuery) filterParts.push(`"${props.searchQuery}"`);
   const filterTitle = filterParts.length > 0 ? filterParts.join(" · ") : "All Abu Dhabi";
+
+  // Active range filters for display
+  const activeRanges: string[] = [];
+  if (props.priceMin || props.priceMax) {
+    activeRanges.push(`Price: ${props.priceMin ? formatAED(Number(props.priceMin)) : "0"} – ${props.priceMax ? formatAED(Number(props.priceMax)) : "∞"}`);
+  }
+  if (props.sizeMin || props.sizeMax) {
+    activeRanges.push(`Size: ${props.sizeMin || "0"} – ${props.sizeMax || "∞"} sqft`);
+  }
+  if (props.rateMin || props.rateMax) {
+    activeRanges.push(`Rate: ${props.rateMin || "0"} – ${props.rateMax || "∞"} AED/sqft`);
+  }
+
+  // Cumulative transaction count chart data
+  const cumulativeBuckets = useMemo(() => {
+    let running = 0;
+    return monthlyBuckets.map((b) => {
+      running += b.txCount;
+      return { ...b, cumulative: running };
+    });
+  }, [monthlyBuckets]);
 
   return (
     <>
@@ -268,6 +308,17 @@ function DashboardReportContent(props: Props) {
               </span>
             </p>
           </header>
+
+          {/* Active range filters */}
+          {activeRanges.length > 0 && (
+            <div className="mt-3 flex flex-wrap gap-2">
+              {activeRanges.map((r, i) => (
+                <span key={i} className="rounded-full border border-accent/30 bg-accent/10 px-3 py-1 text-xs font-medium text-foreground">
+                  {r}
+                </span>
+              ))}
+            </div>
+          )}
 
           {/* KPI Grid */}
           <div className="mt-5 grid grid-cols-2 gap-3 md:grid-cols-4">
@@ -339,6 +390,15 @@ function DashboardReportContent(props: Props) {
               Monthly transaction volume
             </h2>
             <VolumeChart buckets={monthlyBuckets} />
+          </section>
+
+          {/* Cumulative transaction count */}
+          <section className="mt-6">
+            <h2 className="mb-3 flex items-center gap-2 text-sm font-semibold uppercase tracking-wider text-muted">
+              <TrendingUp className="h-4 w-4 text-accent" />
+              Cumulative transaction count over time
+            </h2>
+            <CumulativeChart buckets={cumulativeBuckets} />
           </section>
 
           {/* Recent transactions table */}
@@ -572,6 +632,77 @@ function RecentTransactionsTable({ txs }: { txs: Transaction[] }) {
  * Offer vs market comparison.
  * Only renders when the user provided an offer price.
  */
+/**
+ * Cumulative transaction count over time — shows how deals accumulated
+ * from the first sale to today.
+ */
+function CumulativeChart({ buckets }: { buckets: (MonthBucket & { cumulative: number })[] }) {
+  if (buckets.length < 2) {
+    return <p className="py-8 text-center text-sm text-muted">Not enough data.</p>;
+  }
+
+  const w = 700;
+  const h = 160;
+  const padX = 10;
+  const padY = 18;
+  const maxCum = buckets[buckets.length - 1].cumulative;
+  const stepX = (w - padX * 2) / (buckets.length - 1);
+
+  const points = buckets
+    .map((b, i) => {
+      const x = padX + i * stepX;
+      const y = padY + (h - padY * 2) * (1 - b.cumulative / maxCum);
+      return `${x},${y}`;
+    })
+    .join(" ");
+
+  const areaPoints =
+    `${padX},${h - padY} ` +
+    points +
+    ` ${padX + (buckets.length - 1) * stepX},${h - padY}`;
+
+  const ticks = [0, Math.floor(buckets.length / 2), buckets.length - 1];
+  const total = buckets[buckets.length - 1].cumulative;
+
+  return (
+    <div className="rounded-lg border border-card-border bg-background/40 p-4 print:bg-transparent">
+      <div className="mb-2 flex items-center justify-between text-xs">
+        <span className="text-muted">{buckets[0].month} → {buckets[buckets.length - 1].month}</span>
+        <span className="font-semibold text-foreground">Total: {total.toLocaleString()} transactions</span>
+      </div>
+      <svg viewBox={`0 0 ${w} ${h}`} className="w-full" preserveAspectRatio="none">
+        <polygon points={areaPoints} className="fill-accent/10" />
+        <polyline
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          className="text-accent"
+          points={points}
+        />
+        {ticks.map((idx) => {
+          const x = padX + idx * stepX;
+          return (
+            <text
+              key={idx}
+              x={x}
+              y={h - 2}
+              textAnchor="middle"
+              className="fill-muted text-[9px]"
+            >
+              {buckets[idx].month}
+            </text>
+          );
+        })}
+      </svg>
+      <div className="mt-2 grid grid-cols-3 gap-2 text-[11px] text-muted">
+        <div>First sale: <span className="text-foreground">{buckets[0].month}</span></div>
+        <div className="text-center">Avg/month: <span className="text-foreground">{(total / buckets.length).toFixed(1)}</span></div>
+        <div className="text-right">Peak month: <span className="text-foreground">{Math.max(...buckets.map(b => b.txCount))} tx</span></div>
+      </div>
+    </div>
+  );
+}
+
 function OfferComparison({
   offerPrice: offerPriceStr,
   offerBR: offerBRStr,

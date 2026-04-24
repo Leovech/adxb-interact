@@ -23,7 +23,16 @@ export default async function DashboardReportRoute({
         status={str("status")}
         sequence={str("sequence")}
         assetClass={str("assetClass")}
+        searchQuery={str("searchQuery")}
         datePreset={str("datePreset") || "all_time"}
+        dateFrom={str("dateFrom")}
+        dateTo={str("dateTo")}
+        priceMin={str("priceMin")}
+        priceMax={str("priceMax")}
+        sizeMin={str("sizeMin")}
+        sizeMax={str("sizeMax")}
+        rateMin={str("rateMin")}
+        rateMax={str("rateMax")}
         offerPrice={str("offerPrice")}
         offerBR={str("offerBR")}
         offerSize={str("offerSize")}
