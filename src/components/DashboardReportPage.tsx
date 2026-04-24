@@ -15,7 +15,7 @@
  * Print stylesheet in globals.css hides the toolbar and forces ink layout.
  */
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, Component, type ReactNode } from "react";
 import Header from "@/components/Header";
 import { LanguageProvider } from "@/i18n/LanguageContext";
 import {
@@ -906,10 +906,39 @@ function CompareRow({
   );
 }
 
+class ReportErrorBoundary extends Component<{ children: ReactNode }, { error: string | null }> {
+  constructor(props: { children: ReactNode }) {
+    super(props);
+    this.state = { error: null };
+  }
+  static getDerivedStateFromError(err: Error) {
+    return { error: err.message };
+  }
+  render() {
+    if (this.state.error) {
+      return (
+        <div className="mx-auto max-w-3xl px-4 py-16 text-center">
+          <p className="text-sm font-semibold text-negative">Report rendering error</p>
+          <p className="mt-2 text-xs text-muted">{this.state.error}</p>
+          <a
+            href="/"
+            className="mt-6 inline-flex items-center gap-2 rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-background"
+          >
+            Back to Dashboard
+          </a>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
+
 export default function DashboardReportPage(props: Props) {
   return (
     <LanguageProvider>
-      <DashboardReportContent {...props} />
+      <ReportErrorBoundary>
+        <DashboardReportContent {...props} />
+      </ReportErrorBoundary>
     </LanguageProvider>
   );
 }
