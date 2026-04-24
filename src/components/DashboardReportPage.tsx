@@ -20,7 +20,6 @@ import Header from "@/components/Header";
 import { LanguageProvider } from "@/i18n/LanguageContext";
 import {
   Transaction,
-  Hierarchy,
   decodeTransactions,
 } from "@/data/abu-dhabi";
 import { FilterState, defaultFilters, applyFilters, DatePreset } from "@/lib/filters";
