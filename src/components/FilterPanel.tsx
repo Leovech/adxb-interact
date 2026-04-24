@@ -3,7 +3,7 @@
 import { getProjectsForDistrict, Hierarchy } from "@/data/abu-dhabi";
 import { FilterState, DatePreset, defaultFilters } from "@/lib/filters";
 import { parseSmartSearch, applySmartSearch } from "@/lib/smart-search";
-import { RotateCcw, Calendar, Search, ChevronDown, MapPin, Building2, X, Filter, Sparkles, ArrowRight } from "lucide-react";
+import { RotateCcw, Calendar, Search, ChevronDown, MapPin, Building2, X, Filter, Sparkles, ArrowRight, FileText } from "lucide-react";
 import { useState, useMemo, useRef, useEffect, useCallback } from "react";
 import { useT } from "@/i18n/LanguageContext";
 
@@ -186,6 +186,19 @@ export default function FilterPanel({
     setSmartQuery("");
     setSearchFocused(false);
   }, [smartQuery, hierarchy, filters, onChange]);
+
+  const buildReportUrl = (f: FilterState) => {
+    const params = new URLSearchParams();
+    if (f.district) params.set("district", f.district);
+    if (f.project) params.set("project", f.project);
+    if (f.propertyType) params.set("propertyType", f.propertyType);
+    if (f.bedrooms) params.set("bedrooms", f.bedrooms);
+    if (f.status) params.set("status", f.status);
+    if (f.sequence) params.set("sequence", f.sequence);
+    if (f.assetClass) params.set("assetClass", f.assetClass);
+    if (f.datePreset && f.datePreset !== "all_time") params.set("datePreset", f.datePreset);
+    return `/dashboard/report?${params.toString()}`;
+  };
 
   const update = (partial: Partial<FilterState>) => {
     const next = { ...filters, ...partial };
@@ -376,6 +389,13 @@ export default function FilterPanel({
           <RotateCcw className="h-3 w-3" />
           {t("clear_all")}
         </button>
+        <a
+          href={buildReportUrl(filters)}
+          className="flex items-center gap-1.5 rounded-lg border border-accent/40 bg-accent/10 px-3 py-2 text-xs font-semibold text-accent transition-colors hover:bg-accent/20"
+        >
+          <FileText className="h-3 w-3" />
+          Download PDF Report
+        </a>
       </div>
 
       {/* Active Filter Chips */}
