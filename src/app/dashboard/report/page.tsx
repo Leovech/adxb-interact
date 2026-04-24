@@ -24,6 +24,9 @@ export default async function DashboardReportRoute({
         sequence={str("sequence")}
         assetClass={str("assetClass")}
         datePreset={str("datePreset") || "all_time"}
+        offerPrice={str("offerPrice")}
+        offerBR={str("offerBR")}
+        offerSize={str("offerSize")}
       />
     </Suspense>
   );

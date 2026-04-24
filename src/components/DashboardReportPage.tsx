@@ -46,6 +46,9 @@ interface Props {
   sequence: string;
   assetClass: string;
   datePreset: string;
+  offerPrice?: string;
+  offerBR?: string;
+  offerSize?: string;
 }
 
 function formatAED(n: number): string {
@@ -306,6 +309,20 @@ function DashboardReportContent(props: Props) {
             </span>
           </div>
 
+          {/* Offer vs Market comparison — only if the user entered an offer */}
+          <OfferComparison
+            offerPrice={props.offerPrice}
+            offerBR={props.offerBR}
+            offerSize={props.offerSize}
+            medianPrice={medianPrice}
+            medianRate={medianRate}
+            minPrice={minPrice}
+            maxPrice={maxPrice}
+            medianSize={medianSize}
+            txCount={filtered.length}
+            prices={prices}
+          />
+
           {/* Full Price History Chart — from first tx to report date */}
           <section className="mt-6">
             <h2 className="mb-3 flex items-center gap-2 text-sm font-semibold uppercase tracking-wider text-muted">
@@ -547,6 +564,213 @@ function RecentTransactionsTable({ txs }: { txs: Transaction[] }) {
           ))}
         </tbody>
       </table>
+    </div>
+  );
+}
+
+/**
+ * Offer vs market comparison.
+ * Only renders when the user provided an offer price.
+ */
+function OfferComparison({
+  offerPrice: offerPriceStr,
+  offerBR: offerBRStr,
+  offerSize: offerSizeStr,
+  medianPrice,
+  medianRate,
+  minPrice,
+  maxPrice,
+  medianSize,
+  txCount,
+  prices,
+}: {
+  offerPrice?: string;
+  offerBR?: string;
+  offerSize?: string;
+  medianPrice: number;
+  medianRate: number;
+  minPrice: number;
+  maxPrice: number;
+  medianSize: number;
+  txCount: number;
+  prices: number[];
+}) {
+  const offerPrice = Number(offerPriceStr) || 0;
+  const offerBR = offerBRStr || "";
+  const offerSize = Number(offerSizeStr) || 0;
+
+  if (offerPrice <= 0) return null;
+
+  const offerRate = offerSize > 0 ? Math.round(offerPrice / offerSize) : 0;
+  const vsMedianPct =
+    medianPrice > 0 ? ((offerPrice - medianPrice) / medianPrice) * 100 : 0;
+  const vsMinPct =
+    minPrice > 0 ? ((offerPrice - minPrice) / minPrice) * 100 : 0;
+  const vsMaxPct =
+    maxPrice > 0 ? ((offerPrice - maxPrice) / maxPrice) * 100 : 0;
+
+  // Position in the distribution (what percentile is the offer?)
+  const belowCount = prices.filter((p) => p <= offerPrice).length;
+  const percentile = txCount > 0 ? Math.round((belowCount / txCount) * 100) : 0;
+
+  const isBelow = vsMedianPct < 0;
+  const isWayBelow = vsMedianPct < -10;
+  const isAbove = vsMedianPct > 5;
+
+  let verdictText: string;
+  let verdictColor: string;
+  if (isWayBelow) {
+    verdictText =
+      "Your offer is significantly below the market median. This is a strong negotiation position — but the seller may reject it outright. Consider using the closed-sale data below as leverage.";
+    verdictColor = "border-positive/40 bg-positive/5";
+  } else if (isBelow) {
+    verdictText =
+      "Your offer is below the market median — a competitive position. You have room to negotiate up if needed while still getting a good deal.";
+    verdictColor = "border-positive/40 bg-positive/5";
+  } else if (isAbove) {
+    verdictText =
+      "Your offer is above the market median. Consider whether the specific unit justifies the premium, or use the data below to negotiate closer to market.";
+    verdictColor = "border-negative/30 bg-negative/5";
+  } else {
+    verdictText =
+      "Your offer is in line with recent closed-sale prices. This is a fair-market offer.";
+    verdictColor = "border-accent/30 bg-accent/5";
+  }
+
+  // Price distribution bar — visual position of the offer
+  const priceRange = maxPrice - minPrice;
+  const offerPosition =
+    priceRange > 0 ? Math.max(0, Math.min(100, ((offerPrice - minPrice) / priceRange) * 100)) : 50;
+  const medianPosition =
+    priceRange > 0 ? ((medianPrice - minPrice) / priceRange) * 100 : 50;
+
+  return (
+    <section className={`mt-5 rounded-xl border ${verdictColor} p-5`}>
+      <h2 className="mb-3 flex items-center gap-2 text-sm font-semibold uppercase tracking-wider text-foreground">
+        <TrendingUp className="h-4 w-4 text-accent" />
+        Your offer vs market
+      </h2>
+
+      {/* Offer summary */}
+      <div className="mb-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
+        <div>
+          <p className="text-[10px] font-bold uppercase tracking-wider text-muted">Your offer</p>
+          <p className="text-xl font-bold text-foreground">{formatFullAED(offerPrice)}</p>
+        </div>
+        {offerBR && (
+          <div>
+            <p className="text-[10px] font-bold uppercase tracking-wider text-muted">Bedrooms</p>
+            <p className="text-xl font-bold text-foreground">
+              {offerBR === "0" ? "Studio" : `${offerBR} BR`}
+            </p>
+          </div>
+        )}
+        {offerSize > 0 && (
+          <div>
+            <p className="text-[10px] font-bold uppercase tracking-wider text-muted">Size</p>
+            <p className="text-xl font-bold text-foreground">{offerSize.toLocaleString()} sqft</p>
+          </div>
+        )}
+        {offerRate > 0 && (
+          <div>
+            <p className="text-[10px] font-bold uppercase tracking-wider text-muted">Your rate</p>
+            <p className="text-xl font-bold text-foreground">{offerRate.toLocaleString()} AED/sqft</p>
+          </div>
+        )}
+      </div>
+
+      {/* Verdict */}
+      <p className="mb-4 rounded-lg border border-card-border bg-card-bg px-4 py-3 text-sm leading-relaxed text-foreground">
+        {verdictText}
+      </p>
+
+      {/* Comparison grid */}
+      <div className="mb-4 grid grid-cols-1 gap-3 sm:grid-cols-3">
+        <CompareRow
+          label="vs Market median"
+          market={formatFullAED(medianPrice)}
+          delta={vsMedianPct}
+        />
+        <CompareRow
+          label="vs Lowest sale"
+          market={formatFullAED(minPrice)}
+          delta={vsMinPct}
+        />
+        <CompareRow
+          label="vs Highest sale"
+          market={formatFullAED(maxPrice)}
+          delta={vsMaxPct}
+        />
+      </div>
+
+      {/* Rate comparison */}
+      {offerRate > 0 && (
+        <div className="mb-4 rounded-lg border border-card-border bg-card-bg px-4 py-3 text-sm">
+          <span className="text-muted">Your rate: </span>
+          <span className="font-bold text-foreground">{offerRate.toLocaleString()} AED/sqft</span>
+          <span className="mx-2 text-muted">vs market median:</span>
+          <span className="font-bold text-accent">{medianRate.toLocaleString()} AED/sqft</span>
+          {medianSize > 0 && (
+            <span className="ms-2 text-muted">(typical size: {medianSize.toLocaleString()} sqft)</span>
+          )}
+        </div>
+      )}
+
+      {/* Visual price distribution bar */}
+      <div className="rounded-lg border border-card-border bg-card-bg p-4">
+        <p className="mb-2 text-[10px] font-bold uppercase tracking-wider text-muted">
+          Where your offer sits in the distribution
+        </p>
+        <div className="relative h-8 w-full rounded-full bg-input-bg">
+          {/* Full range bar */}
+          <div className="absolute inset-y-0 left-0 right-0 rounded-full bg-gradient-to-r from-positive/30 via-accent/20 to-negative/30" />
+          {/* Median marker */}
+          <div
+            className="absolute top-0 bottom-0 w-0.5 bg-accent"
+            style={{ left: `${medianPosition}%` }}
+          >
+            <span className="absolute -top-5 left-1/2 -translate-x-1/2 whitespace-nowrap text-[9px] font-bold text-accent">
+              Median
+            </span>
+          </div>
+          {/* Offer marker */}
+          <div
+            className="absolute top-0 bottom-0 w-1 rounded-full bg-foreground"
+            style={{ left: `${offerPosition}%` }}
+          >
+            <span className="absolute -bottom-5 left-1/2 -translate-x-1/2 whitespace-nowrap text-[9px] font-bold text-foreground">
+              Your offer
+            </span>
+          </div>
+        </div>
+        <div className="mt-6 flex items-center justify-between text-[11px] text-muted">
+          <span>Low: {formatAED(minPrice)}</span>
+          <span className="font-semibold text-foreground">
+            Percentile: {percentile}% of sales were at or below your offer
+          </span>
+          <span>High: {formatAED(maxPrice)}</span>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function CompareRow({
+  label, market, delta,
+}: {
+  label: string;
+  market: string;
+  delta: number;
+}) {
+  const color =
+    delta < -2 ? "text-positive" : delta > 5 ? "text-negative" : "text-foreground";
+  return (
+    <div className="rounded-lg border border-card-border bg-card-bg p-3 text-center">
+      <p className="text-[10px] font-bold uppercase tracking-wider text-muted">{label}</p>
+      <p className="mt-0.5 text-sm text-muted">{market}</p>
+      <p className={`text-lg font-bold ${color}`}>
+        {delta >= 0 ? "+" : ""}{delta.toFixed(1)}%
+      </p>
     </div>
   );
 }
