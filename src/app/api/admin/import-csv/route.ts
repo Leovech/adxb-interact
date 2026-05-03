@@ -115,7 +115,24 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Missing `file` field" }, { status: 400 });
   }
 
-  const csvText = await file.text();
+  // Client may send the CSV gzipped to bypass Vercel's 4.5MB body limit.
+  // Decompress here using the Web Streams DecompressionStream (Node 18+).
+  const compressed = formData.get("compressed");
+  let csvText: string;
+  try {
+    if (compressed === "gzip") {
+      const decompStream = file.stream().pipeThrough(new DecompressionStream("gzip"));
+      csvText = await new Response(decompStream).text();
+    } else {
+      csvText = await file.text();
+    }
+  } catch (e) {
+    return NextResponse.json(
+      { error: `Failed to read file: ${e instanceof Error ? e.message : "unknown"}` },
+      { status: 400 }
+    );
+  }
+
   if (csvText.length < 100) {
     return NextResponse.json({ error: "CSV is too small / empty" }, { status: 400 });
   }

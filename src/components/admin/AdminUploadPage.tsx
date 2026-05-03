@@ -33,6 +33,7 @@ function AdminUploadContent() {
   const [password, setPassword] = useState("");
   const [file, setFile] = useState<File | null>(null);
   const [busy, setBusy] = useState(false);
+  const [busyText, setBusyText] = useState("");
   const [result, setResult] = useState<ImportResponse | null>(null);
   const [dragOver, setDragOver] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -57,15 +58,52 @@ function AdminUploadContent() {
   const submit = async () => {
     if (!file || !password) return;
     setBusy(true);
+    setBusyText("Compressing CSV…");
     setResult(null);
     try {
+      // Gzip the CSV in the browser so the Vercel 4.5MB body limit
+      // becomes a 25-30MB CSV limit instead. CompressionStream is
+      // supported in all modern browsers (Chrome 80+, FF 113+, Safari 16.4+).
+      let payload: Blob = file;
+      let compressedFlag = "";
+      if (typeof CompressionStream !== "undefined") {
+        try {
+          const stream = file.stream().pipeThrough(new CompressionStream("gzip"));
+          payload = await new Response(stream).blob();
+          compressedFlag = "gzip";
+        } catch {
+          // Fall back to uncompressed upload if compression fails
+          payload = file;
+        }
+      }
+      setBusyText("Uploading & processing on server…");
+
       const fd = new FormData();
-      fd.append("file", file);
+      fd.append("file", payload, file.name);
       fd.append("password", password);
+      fd.append("originalSize", String(file.size));
+      if (compressedFlag) fd.append("compressed", compressedFlag);
+
       const res = await fetch("/api/admin/import-csv", {
         method: "POST",
         body: fd,
       });
+
+      // Server may return non-JSON on infra errors (413 from Vercel proxy,
+      // 504 timeout, etc.) — handle gracefully.
+      const contentType = res.headers.get("content-type") || "";
+      if (!contentType.includes("application/json")) {
+        const text = await res.text();
+        const sizeMb = (file.size / 1024 / 1024).toFixed(1);
+        setResult({
+          error:
+            res.status === 413
+              ? `File too large (${sizeMb} MB). Even after gzip compression the upload exceeds Vercel's 4.5MB limit. Use the CLI flow instead — see docs/UPDATE_DATA.md.`
+              : `Server returned ${res.status} ${res.statusText}. ${text.slice(0, 200)}`,
+        });
+        return;
+      }
+
       const json: ImportResponse = await res.json();
       setResult(json);
       if (res.ok) setFile(null);
@@ -73,6 +111,7 @@ function AdminUploadContent() {
       setResult({ error: e instanceof Error ? e.message : "Upload failed" });
     } finally {
       setBusy(false);
+      setBusyText("");
     }
   };
 
@@ -162,7 +201,7 @@ function AdminUploadContent() {
           className="flex w-full items-center justify-center gap-2 rounded-lg bg-accent px-4 py-3 text-sm font-semibold text-background transition-colors hover:bg-accent-hover disabled:opacity-60"
         >
           {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
-          {busy ? "Processing & committing…" : "Upload & deploy"}
+          {busy ? busyText || "Working…" : "Upload & deploy"}
         </button>
 
         {/* Result */}
