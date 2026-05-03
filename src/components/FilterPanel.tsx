@@ -3,7 +3,7 @@
 import { getProjectsForDistrict, Hierarchy } from "@/data/abu-dhabi";
 import { FilterState, DatePreset, defaultFilters } from "@/lib/filters";
 import { parseSmartSearch, applySmartSearch } from "@/lib/smart-search";
-import { RotateCcw, Calendar, Search, ChevronDown, MapPin, Building2, X, Filter, Sparkles, ArrowRight, FileText } from "lucide-react";
+import { RotateCcw, Calendar, Search, ChevronDown, MapPin, Building2, X, Filter, Sparkles, ArrowRight } from "lucide-react";
 import { useState, useMemo, useRef, useEffect, useCallback } from "react";
 import { useT } from "@/i18n/LanguageContext";
 
@@ -12,110 +12,6 @@ interface FilterPanelProps {
   onChange: (filters: FilterState) => void;
   transactionCount: number;
   hierarchy: Hierarchy;
-}
-
-/**
- * Offer input panel — appears inline when the user wants a market comparison
- * report. Collects their proposed price, bedrooms, and size, then opens the
- * report with those params.
- */
-function OfferPanel({
-  reportUrl, onClose,
-}: {
-  reportUrl: string;
-  onClose: () => void;
-}) {
-  const [offerPrice, setOfferPrice] = useState("");
-  const [offerBR, setOfferBR] = useState("");
-  const [offerSize, setOfferSize] = useState("");
-
-  const fullUrl = useMemo(() => {
-    const base = new URL(reportUrl, window.location.origin);
-    if (offerPrice) base.searchParams.set("offerPrice", offerPrice);
-    if (offerBR) base.searchParams.set("offerBR", offerBR);
-    if (offerSize) base.searchParams.set("offerSize", offerSize);
-    return base.pathname + "?" + base.searchParams.toString();
-  }, [reportUrl, offerPrice, offerBR, offerSize]);
-
-  return (
-    <div className="border-t border-accent/20 bg-accent/5 px-5 py-4">
-      <div className="mb-3 flex items-center justify-between">
-        <p className="text-sm font-semibold text-foreground">
-          Have an offer? Compare it to the market
-        </p>
-        <button
-          onClick={onClose}
-          className="text-xs text-muted hover:text-foreground"
-        >
-          Skip — report without offer
-        </button>
-      </div>
-      <p className="mb-3 text-xs text-muted">
-        Enter your proposed price, bedrooms, and size — the PDF report will show
-        how your offer stacks up against recent closed sales and current market stats.
-      </p>
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-        <div>
-          <label className="mb-1 block text-[11px] font-semibold uppercase tracking-wider text-muted">
-            Your offer price (AED)
-          </label>
-          <input
-            type="number"
-            value={offerPrice}
-            onChange={(e) => setOfferPrice(e.target.value)}
-            placeholder="e.g. 1200000"
-            className="w-full rounded-lg border border-input-border bg-input-bg px-3 py-2.5 text-sm text-foreground outline-none focus:border-accent focus:ring-1 focus:ring-accent/30"
-          />
-        </div>
-        <div>
-          <label className="mb-1 block text-[11px] font-semibold uppercase tracking-wider text-muted">
-            Bedrooms
-          </label>
-          <select
-            value={offerBR}
-            onChange={(e) => setOfferBR(e.target.value)}
-            className="w-full rounded-lg border border-input-border bg-input-bg px-3 py-2.5 text-sm text-foreground outline-none focus:border-accent focus:ring-1 focus:ring-accent/30"
-          >
-            <option value="">—</option>
-            <option value="0">Studio</option>
-            <option value="1">1 BR</option>
-            <option value="2">2 BR</option>
-            <option value="3">3 BR</option>
-            <option value="4">4 BR</option>
-            <option value="5">5 BR</option>
-            <option value="6">6+ BR</option>
-          </select>
-        </div>
-        <div>
-          <label className="mb-1 block text-[11px] font-semibold uppercase tracking-wider text-muted">
-            Size (sqft)
-          </label>
-          <input
-            type="number"
-            value={offerSize}
-            onChange={(e) => setOfferSize(e.target.value)}
-            placeholder="e.g. 900"
-            className="w-full rounded-lg border border-input-border bg-input-bg px-3 py-2.5 text-sm text-foreground outline-none focus:border-accent focus:ring-1 focus:ring-accent/30"
-          />
-        </div>
-      </div>
-      <div className="mt-3 flex flex-wrap gap-2">
-        <a
-          href={fullUrl}
-          className="inline-flex items-center gap-1.5 rounded-lg bg-accent px-4 py-2.5 text-sm font-semibold text-background transition-colors hover:bg-accent-hover"
-        >
-          <FileText className="h-4 w-4" />
-          {offerPrice ? "Generate report with offer comparison" : "Generate report"}
-        </a>
-        <a
-          href={reportUrl}
-          className="inline-flex items-center gap-1.5 rounded-lg border border-card-border bg-card-bg px-4 py-2.5 text-sm font-medium text-foreground hover:border-accent/40"
-        >
-          Report without offer
-        </a>
-      </div>
-    </div>
-  );
 }
 
 function PillGroup({
@@ -161,7 +57,6 @@ export default function FilterPanel({
 }: FilterPanelProps) {
   const t = useT();
   const [showRanges, setShowRanges] = useState(false);
-  const [showOfferPanel, setShowOfferPanel] = useState(false);
   const [searchFocused, setSearchFocused] = useState(false);
   const searchRef = useRef<HTMLDivElement>(null);
   const [smartQuery, setSmartQuery] = useState("");
@@ -291,33 +186,6 @@ export default function FilterPanel({
     setSmartQuery("");
     setSearchFocused(false);
   }, [smartQuery, hierarchy, filters, onChange]);
-
-  const buildReportUrl = (f: FilterState) => {
-    const params = new URLSearchParams();
-    const fields: [string, string][] = [
-      ["district", f.district],
-      ["project", f.project],
-      ["propertyType", f.propertyType],
-      ["bedrooms", f.bedrooms],
-      ["status", f.status],
-      ["sequence", f.sequence],
-      ["assetClass", f.assetClass],
-      ["searchQuery", f.searchQuery],
-      ["priceMin", f.priceMin],
-      ["priceMax", f.priceMax],
-      ["sizeMin", f.sizeMin],
-      ["sizeMax", f.sizeMax],
-      ["rateMin", f.rateMin],
-      ["rateMax", f.rateMax],
-      ["dateFrom", f.dateFrom],
-      ["dateTo", f.dateTo],
-    ];
-    for (const [k, v] of fields) {
-      if (v) params.set(k, v);
-    }
-    if (f.datePreset && f.datePreset !== "all_time") params.set("datePreset", f.datePreset);
-    return `/dashboard/report?${params.toString()}`;
-  };
 
   const update = (partial: Partial<FilterState>) => {
     const next = { ...filters, ...partial };
@@ -508,22 +376,7 @@ export default function FilterPanel({
           <RotateCcw className="h-3 w-3" />
           {t("clear_all")}
         </button>
-        <button
-          onClick={() => setShowOfferPanel(!showOfferPanel)}
-          className="flex items-center gap-1.5 rounded-lg border border-accent/40 bg-accent/10 px-3 py-2 text-xs font-semibold text-accent transition-colors hover:bg-accent/20"
-        >
-          <FileText className="h-3 w-3" />
-          {showOfferPanel ? "Close report panel" : "Download PDF Report"}
-        </button>
       </div>
-
-      {/* Offer input panel */}
-      {showOfferPanel && (
-        <OfferPanel
-          reportUrl={buildReportUrl(filters)}
-          onClose={() => setShowOfferPanel(false)}
-        />
-      )}
 
       {/* Active Filter Chips */}
       {activeFilterCount > 0 && (
