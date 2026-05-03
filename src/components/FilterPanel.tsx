@@ -3,7 +3,7 @@
 import { getProjectsForDistrict, Hierarchy } from "@/data/abu-dhabi";
 import { FilterState, DatePreset, defaultFilters } from "@/lib/filters";
 import { parseSmartSearch, applySmartSearch } from "@/lib/smart-search";
-import { RotateCcw, Calendar, Search, ChevronDown, MapPin, Building2, X, Filter, Sparkles, ArrowRight } from "lucide-react";
+import { RotateCcw, Calendar, Search, ChevronDown, MapPin, Building2, X, Filter, Sparkles, ArrowRight, FileText } from "lucide-react";
 import { useState, useMemo, useRef, useEffect, useCallback } from "react";
 import { useT } from "@/i18n/LanguageContext";
 
@@ -376,6 +376,20 @@ export default function FilterPanel({
           <RotateCcw className="h-3 w-3" />
           {t("clear_all")}
         </button>
+        <a
+          href={`/report?${new URLSearchParams(
+            Object.entries({
+              project: filters.project,
+              district: filters.district,
+              bedrooms: filters.bedrooms,
+              propertyType: filters.propertyType,
+            }).filter(([, v]) => v)
+          ).toString()}`}
+          className="flex items-center gap-1.5 rounded-lg border border-accent/40 bg-accent/10 px-3 py-2 text-xs font-semibold text-accent transition-colors hover:bg-accent/20"
+        >
+          <FileText className="h-3 w-3" />
+          PDF Report
+        </a>
       </div>
 
       {/* Active Filter Chips */}
