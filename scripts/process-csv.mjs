@@ -111,8 +111,14 @@ function slugify(str) {
 }
 
 // ---- Main ----
-console.log("Reading CSV...");
-const csvText = readFileSync(join(ROOT, "recent_sales.csv"), "utf-8");
+// Accept CSV path as CLI arg, fall back to ./recent_sales.csv
+const cliPath = process.argv[2];
+const csvPath = cliPath
+  ? (cliPath.startsWith("/") ? cliPath : join(process.cwd(), cliPath))
+  : join(ROOT, "recent_sales.csv");
+
+console.log(`Reading CSV from: ${csvPath}`);
+const csvText = readFileSync(csvPath, "utf-8");
 
 console.log("Parsing CSV...");
 const rows = parseCSV(csvText);
