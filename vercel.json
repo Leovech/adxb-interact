@@ -1,20 +1,12 @@
 {
   "crons": [
     {
-      "path": "/api/revalidate",
-      "schedule": "0 */2 * * *"
+      "path": "/api/admin/auto-sync",
+      "schedule": "0 6 * * *"
     },
     {
       "path": "/api/mls/crawl",
       "schedule": "0 9 * * *"
-    },
-    {
-      "path": "/api/analytics/refresh",
-      "schedule": "30 9 * * *"
-    },
-    {
-      "path": "/api/admin/auto-sync",
-      "schedule": "0 6 * * *"
     }
   ]
 }
