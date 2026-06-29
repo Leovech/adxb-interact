@@ -420,7 +420,7 @@ function MomentumCard({
   return (
     <a
       href={`/mls/report?project=${encodeURIComponent(row.project)}&bedrooms=${row.bedrooms}`}
-      className="group flex flex-col gap-2 rounded-lg border border-card-border bg-background/40 p-3 transition-colors hover:border-accent/40 hover:bg-accent/5"
+      className="group flex flex-col gap-2 rounded-lg border border-card-border bg-background/40 p-3 transition-colors hover:border-accent/40 hover:bg-accent/5 hover-lift"
     >
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0 flex-1">

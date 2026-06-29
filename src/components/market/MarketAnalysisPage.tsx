@@ -347,7 +347,7 @@ function RecommendationCard({ rec }: { rec: Recommendation }) {
     rec.verdict === "buy" ? "text-positive" : rec.verdict === "avoid" ? "text-negative" : "text-accent";
 
   return (
-    <article className={`overflow-hidden rounded-xl border ${verdictStyle}`}>
+    <article className={`overflow-hidden rounded-xl border hover-lift ${verdictStyle}`}>
       <div className="grid grid-cols-1 gap-0 lg:grid-cols-[1fr_260px]">
         <div className="bg-card-bg p-5">
           <div className="flex flex-wrap items-start justify-between gap-3">

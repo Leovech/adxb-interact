@@ -175,9 +175,11 @@ export default function KPICards({ filtered, total }: KPICardsProps) {
         {cards.map((card, i) => (
           <div
             key={card.title}
-            className={`animate-fade-in stagger-${i + 1} group relative overflow-hidden rounded-xl border border-card-border bg-card-bg p-5 transition-all hover:border-accent/30`}
+            className={`animate-fade-in stagger-${i + 1} hover-lift group relative overflow-hidden rounded-xl border border-card-border bg-card-bg p-5 hover:border-accent/40`}
           >
-            <div className="absolute end-3 top-3 rounded-lg bg-accent/10 p-2">
+            {/* accent wash on hover */}
+            <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-accent/0 to-accent/0 transition-colors duration-300 group-hover:from-accent/[0.04] group-hover:to-transparent" />
+            <div className="absolute end-3 top-3 rounded-lg bg-accent/10 p-2 transition-colors group-hover:bg-accent/20">
               <card.icon className="h-4 w-4 text-accent" />
             </div>
             <p className="text-xs font-medium uppercase tracking-wider text-muted">

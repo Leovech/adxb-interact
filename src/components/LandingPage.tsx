@@ -5,6 +5,7 @@ import ContactSection from "@/components/ContactSection";
 import { LanguageProvider } from "@/i18n/LanguageContext";
 import Reveal from "@/components/ui/Reveal";
 import AnimatedCounter from "@/components/ui/AnimatedCounter";
+import SparkAreaChart from "@/components/ui/SparkAreaChart";
 import {
   ArrowRight,
   BarChart3,
@@ -79,6 +80,20 @@ const STEPS = [
   { icon: FileText, title: "Act with confidence", body: "Generate a report, compare your offer, and negotiate from real data." },
 ];
 
+/** Representative Abu Dhabi avg rate/sqft trend for the landing preview. */
+const PREVIEW_TREND = [
+  { label: "2024 Q1", value: 1180 },
+  { label: "Q2", value: 1240 },
+  { label: "Q3", value: 1310 },
+  { label: "Q4", value: 1395 },
+  { label: "2025 Q1", value: 1480 },
+  { label: "Q2", value: 1620 },
+  { label: "Q3", value: 1755 },
+  { label: "Q4", value: 1840 },
+  { label: "2026 Q1", value: 1965 },
+  { label: "Q2", value: 2040 },
+];
+
 function LandingContent() {
   return (
     <>
@@ -135,6 +150,34 @@ function LandingContent() {
             ))}
           </div>
         </div>
+      </section>
+
+      {/* ───────── Market preview chart ───────── */}
+      <section className="mx-auto max-w-[1100px] px-4 pb-4 lg:px-8">
+        <Reveal>
+          <div className="rounded-2xl border border-card-border bg-card-bg p-5 sm:p-7">
+            <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-widest text-accent">Market pulse</p>
+                <h3 className="mt-1 text-lg font-bold text-foreground">
+                  Abu Dhabi median rate per sqft
+                </h3>
+              </div>
+              <span className="rounded-full bg-positive/15 px-3 py-1 text-xs font-bold text-positive">
+                Hover the line to explore
+              </span>
+            </div>
+            <SparkAreaChart
+              data={PREVIEW_TREND}
+              height={240}
+              formatValue={(n) => `${Math.round(n).toLocaleString()} AED`}
+            />
+            <p className="mt-3 text-center text-xs text-muted">
+              Illustrative trend. Live, filterable charts live inside the{" "}
+              <a href="/dashboard" className="text-accent link-underline">dashboard</a>.
+            </p>
+          </div>
+        </Reveal>
       </section>
 
       {/* ───────── Features ───────── */}
