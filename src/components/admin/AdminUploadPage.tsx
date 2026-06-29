@@ -11,6 +11,8 @@ import {
   AlertTriangle,
   Lock,
   X,
+  Zap,
+  Clock,
 } from "lucide-react";
 
 interface ImportResponse {
@@ -29,9 +31,29 @@ interface ImportResponse {
   message?: string;
 }
 
+interface AutoSyncResponse {
+  ok?: boolean;
+  syncedAt?: string;
+  source?: { url: string; sizeBytes: number; fetchedMs: number };
+  parse?: {
+    totalRows: number;
+    validRows: number;
+    skipped: number;
+    districts: number;
+    projects: number;
+    communities: number;
+  };
+  commits?: { transactions: string; hierarchy: string };
+  skipped?: { reason: string };
+  message?: string;
+  error?: string;
+}
+
 function AdminUploadContent() {
   const [password, setPassword] = useState("");
   const [file, setFile] = useState<File | null>(null);
+  const [autoSyncBusy, setAutoSyncBusy] = useState(false);
+  const [autoSyncResult, setAutoSyncResult] = useState<AutoSyncResponse | null>(null);
   const [busy, setBusy] = useState(false);
   const [busyText, setBusyText] = useState("");
   const [result, setResult] = useState<ImportResponse | null>(null);
@@ -112,6 +134,33 @@ function AdminUploadContent() {
     } finally {
       setBusy(false);
       setBusyText("");
+    }
+  };
+
+  const triggerAutoSync = async () => {
+    if (!password) {
+      setAutoSyncResult({ error: "Enter admin password above first." });
+      return;
+    }
+    setAutoSyncBusy(true);
+    setAutoSyncResult(null);
+    try {
+      const res = await fetch("/api/admin/auto-sync", {
+        method: "GET",
+        headers: { "X-Admin-Password": password },
+      });
+      const contentType = res.headers.get("content-type") || "";
+      if (!contentType.includes("application/json")) {
+        const text = await res.text();
+        setAutoSyncResult({ error: `Server returned ${res.status}: ${text.slice(0, 200)}` });
+        return;
+      }
+      const json: AutoSyncResponse = await res.json();
+      setAutoSyncResult(json);
+    } catch (e) {
+      setAutoSyncResult({ error: e instanceof Error ? e.message : "Sync failed" });
+    } finally {
+      setAutoSyncBusy(false);
     }
   };
 
@@ -259,8 +308,80 @@ function AdminUploadContent() {
           </div>
         )}
 
+        {/* Auto-sync section */}
+        <section className="mt-8 rounded-xl border border-card-border bg-card-bg p-5">
+          <div className="mb-3 flex items-center gap-2">
+            <Clock className="h-4 w-4 text-accent" />
+            <h2 className="text-sm font-semibold text-foreground">
+              Daily auto-sync (cron)
+            </h2>
+          </div>
+          <p className="mb-3 text-xs leading-relaxed text-muted">
+            A Vercel cron job hits <code className="rounded bg-input-bg px-1.5 py-0.5 text-foreground">/api/admin/auto-sync</code>{" "}
+            every day at <strong>06:00 UTC (10:00 Dubai)</strong>. It pulls a CSV
+            from <code className="rounded bg-input-bg px-1.5 py-0.5 text-foreground">ADREC_CSV_URL</code>{" "}
+            (env var), processes it, and commits the JSON to GitHub. No manual
+            upload needed once configured. See{" "}
+            <code className="rounded bg-input-bg px-1.5 py-0.5 text-foreground">docs/AUTO_SYNC_SETUP.md</code>.
+          </p>
+          <button
+            onClick={triggerAutoSync}
+            disabled={autoSyncBusy || !password}
+            className="inline-flex items-center gap-2 rounded-lg border border-accent/40 bg-accent/10 px-4 py-2 text-xs font-semibold text-accent transition-colors hover:bg-accent/20 disabled:opacity-50"
+          >
+            {autoSyncBusy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Zap className="h-3.5 w-3.5" />}
+            {autoSyncBusy ? "Running…" : "Run auto-sync now"}
+          </button>
+
+          {autoSyncResult && autoSyncResult.ok && (
+            <div className="mt-4 rounded-lg border border-positive/40 bg-positive/10 p-4">
+              <p className="mb-2 flex items-center gap-2 text-sm font-semibold text-positive">
+                <CheckCircle2 className="h-4 w-4" /> {autoSyncResult.message}
+              </p>
+              {autoSyncResult.skipped ? (
+                <p className="text-xs text-muted">{autoSyncResult.skipped.reason}</p>
+              ) : (
+                <>
+                  {autoSyncResult.parse && (
+                    <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+                      <Stat label="Valid rows" value={autoSyncResult.parse.validRows.toLocaleString()} />
+                      <Stat label="Districts" value={autoSyncResult.parse.districts.toString()} />
+                      <Stat label="Projects" value={autoSyncResult.parse.projects.toString()} />
+                    </div>
+                  )}
+                  {autoSyncResult.source && (
+                    <p className="mt-2 text-[11px] text-muted">
+                      Fetched {(autoSyncResult.source.sizeBytes / 1024 / 1024).toFixed(2)} MB in{" "}
+                      {autoSyncResult.source.fetchedMs} ms
+                    </p>
+                  )}
+                  {autoSyncResult.commits && (
+                    <div className="mt-2 space-y-0.5 text-xs">
+                      <a href={autoSyncResult.commits.transactions} target="_blank" rel="noreferrer" className="block text-accent hover:underline">
+                        View transactions.json commit →
+                      </a>
+                      <a href={autoSyncResult.commits.hierarchy} target="_blank" rel="noreferrer" className="block text-accent hover:underline">
+                        View hierarchy.json commit →
+                      </a>
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
+          )}
+
+          {autoSyncResult && autoSyncResult.error && (
+            <div className="mt-4 rounded-lg border border-negative/40 bg-negative/10 p-4">
+              <p className="flex items-center gap-2 text-sm font-semibold text-negative">
+                <AlertTriangle className="h-4 w-4" /> Auto-sync failed
+              </p>
+              <p className="mt-1 text-xs text-foreground">{autoSyncResult.error}</p>
+            </div>
+          )}
+        </section>
+
         {/* Setup instructions */}
-        <details className="mt-8 rounded-lg border border-card-border bg-card-bg p-4">
+        <details className="mt-6 rounded-lg border border-card-border bg-card-bg p-4">
           <summary className="cursor-pointer text-sm font-semibold text-foreground">
             First time? Set these env vars in Vercel
           </summary>
@@ -272,8 +393,11 @@ function AdminUploadContent() {
               <li><code className="rounded bg-input-bg px-1.5 py-0.5 text-foreground">GITHUB_OWNER</code> = <code>Leovech</code></li>
               <li><code className="rounded bg-input-bg px-1.5 py-0.5 text-foreground">GITHUB_REPO</code> = <code>adxb-interact</code></li>
               <li><code className="rounded bg-input-bg px-1.5 py-0.5 text-foreground">GITHUB_BRANCH</code> = <code>main</code> (optional)</li>
+              <li className="pt-1 text-foreground"><strong>For daily auto-sync (optional):</strong></li>
+              <li><code className="rounded bg-input-bg px-1.5 py-0.5 text-foreground">ADREC_CSV_URL</code> — direct-download URL for the latest CSV</li>
+              <li><code className="rounded bg-input-bg px-1.5 py-0.5 text-foreground">CRON_SECRET</code> — random string so only Vercel cron can trigger it</li>
             </ul>
-            <p className="text-muted">After saving env vars, Vercel needs a redeploy for them to apply.</p>
+            <p className="text-muted">After saving env vars, Vercel needs a redeploy for them to apply. See <code>docs/AUTO_SYNC_SETUP.md</code> for the full auto-sync guide.</p>
           </div>
         </details>
       </main>

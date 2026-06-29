@@ -11,6 +11,10 @@
     {
       "path": "/api/analytics/refresh",
       "schedule": "30 9 * * *"
+    },
+    {
+      "path": "/api/admin/auto-sync",
+      "schedule": "0 6 * * *"
     }
   ]
 }
