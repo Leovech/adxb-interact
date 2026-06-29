@@ -122,9 +122,20 @@ const csvText = readFileSync(csvPath, "utf-8");
 
 console.log("Parsing CSV...");
 const rows = parseCSV(csvText);
-const header = rows[0];
-console.log(`Header: ${header.join(" | ")}`);
-console.log(`Total rows (incl header): ${rows.length}`);
+
+// Detect whether row 0 is a header or data. ADREC CSVs come in both
+// flavours — sometimes with a header, sometimes without. If the third
+// column of row 0 looks like a date (YYYY-MM-DD) we treat row 0 as data.
+const firstRowLooksLikeData =
+  rows[0] && rows[0][2] && /^\d{4}-\d{2}-\d{2}$/.test(rows[0][2]);
+const startIdx = firstRowLooksLikeData ? 0 : 1;
+
+if (firstRowLooksLikeData) {
+  console.log("No header detected — treating row 0 as data");
+} else {
+  console.log(`Header: ${(rows[0] || []).join(" | ")}`);
+}
+console.log(`Total rows: ${rows.length} (parsing from index ${startIdx})`);
 
 // String index helpers for compact encoding
 const districtIndex = new Map();
@@ -146,7 +157,7 @@ const districtSet = new Map(); // name -> { count, projects }
 const projectSet = new Map();  // name -> { district, count }
 
 let skipped = 0;
-for (let i = 1; i < rows.length; i++) {
+for (let i = startIdx; i < rows.length; i++) {
   const row = rows[i];
   if (row.length < 14) { skipped++; continue; }
 

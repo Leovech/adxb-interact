@@ -157,8 +157,15 @@ export function processCsvText(csvText: string): ImportResult {
   const districtSet = new Map<string, { id: string; projects: Set<string>; count: number }>();
   const projectSet = new Map<string, { id: string; district: string; community: string; count: number }>();
 
+  // Detect whether row 0 is a header or data. ADREC CSVs come in both
+  // flavours. If the third column of row 0 looks like a YYYY-MM-DD date we
+  // treat row 0 as data, otherwise we skip it as a header.
+  const firstRowIsData =
+    rows[0] && rows[0][2] && /^\d{4}-\d{2}-\d{2}$/.test(rows[0][2]);
+  const startIdx = firstRowIsData ? 0 : 1;
+
   let skipped = 0;
-  for (let i = 1; i < rows.length; i++) {
+  for (let i = startIdx; i < rows.length; i++) {
     const row = rows[i];
     if (row.length < 14) { skipped++; continue; }
 
@@ -253,7 +260,7 @@ export function processCsvText(csvText: string): ImportResult {
     transactions,
     hierarchy,
     stats: {
-      totalRows: rows.length - 1,
+      totalRows: rows.length - startIdx,
       validRows: compactRows.length,
       skipped,
       districts: hierarchy.districts.length,
