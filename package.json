@@ -8,7 +8,8 @@
     "start": "next start",
     "lint": "eslint",
     "test": "node --import tsx --test tests/*.test.ts",
-    "import-csv": "node scripts/process-csv.mjs"
+    "import-csv": "node scripts/process-csv.mjs",
+    "recommendations": "tsx scripts/run-recommendations.ts"
   },
   "dependencies": {
     "@tanstack/react-table": "^8.21.3",
