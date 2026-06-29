@@ -129,7 +129,7 @@ function ReportContent({ project, district, bedrooms, propertyType, offerPrice, 
         <Header />
         <div className="mx-auto max-w-3xl px-4 py-16 text-center">
           <p className="text-negative">{error}</p>
-          <a href="/" className="mt-4 inline-block text-sm text-accent hover:underline">Back to Dashboard</a>
+          <a href="/dashboard" className="mt-4 inline-block text-sm text-accent hover:underline">Back to Dashboard</a>
         </div>
       </>
     );
@@ -144,7 +144,7 @@ function ReportContent({ project, district, bedrooms, propertyType, offerPrice, 
           <p className="mt-2 text-sm text-muted">
             No data for {project || "this filter"}. Try a different search.
           </p>
-          <a href="/" className="mt-4 inline-flex items-center gap-2 rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-background">
+          <a href="/dashboard" className="mt-4 inline-flex items-center gap-2 rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-background">
             <ArrowLeft className="h-4 w-4" /> Back to Dashboard
           </a>
         </div>
@@ -192,7 +192,7 @@ function ReportContent({ project, district, bedrooms, propertyType, offerPrice, 
       <main className="mx-auto w-full max-w-4xl flex-1 px-4 py-6">
         {/* Toolbar */}
         <div className="mb-6 flex flex-wrap items-center justify-between gap-3 print:hidden">
-          <a href="/" className="inline-flex items-center gap-2 rounded-lg border border-card-border bg-card-bg px-3 py-2 text-sm font-medium text-foreground hover:border-accent/50">
+          <a href="/dashboard" className="inline-flex items-center gap-2 rounded-lg border border-card-border bg-card-bg px-3 py-2 text-sm font-medium text-foreground hover:border-accent/50">
             <ArrowLeft className="h-4 w-4" /> Back
           </a>
           <button onClick={() => window.print()} className="inline-flex items-center gap-2 rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-background hover:bg-accent-hover">

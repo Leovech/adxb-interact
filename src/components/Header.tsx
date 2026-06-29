@@ -52,7 +52,7 @@ export default function Header() {
   };
 
   const navLinks = [
-    { label: t("nav_dashboard"), href: "/" },
+    { label: t("nav_dashboard"), href: "/dashboard" },
     { label: t("nav_trends"), href: "/trends" },
     { label: t("nav_market_analysis"), href: "/market-analysis" },
     { label: t("nav_mls"), href: "/mls" },
@@ -75,7 +75,7 @@ export default function Header() {
       </div>
       <div className="mx-auto flex h-16 max-w-[1440px] items-center justify-between px-4 lg:px-8">
         {/* Logo */}
-        <a href="#" className="flex items-center gap-2.5">
+        <a href="/" className="flex items-center gap-2.5">
           <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-accent/10 overflow-hidden">
             <LogoMark className="h-8 w-8 text-foreground" />
           </div>
