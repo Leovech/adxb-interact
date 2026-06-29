@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Header from "@/components/Header";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { USER_TYPE_LABELS, UserType } from "@/lib/auth/session";
+import PortfolioSection from "@/components/account/PortfolioSection";
 import {
   User as UserIcon,
   LogOut,
@@ -100,7 +101,7 @@ export default function AccountPage() {
   return (
     <>
       <Header />
-      <main className="mx-auto w-full max-w-3xl flex-1 px-4 py-8">
+      <main className="mx-auto w-full max-w-4xl flex-1 px-4 py-8">
         {welcomeSeen && (
           <div className="mb-6 rounded-xl border border-positive/30 bg-positive/10 px-4 py-3 text-sm text-positive">
             <Sparkles className="me-2 inline h-4 w-4" />
@@ -124,6 +125,9 @@ export default function AccountPage() {
             Sign out
           </button>
         </div>
+
+        {/* My properties — portfolio tracker */}
+        <PortfolioSection userId={user.id} />
 
         <section className="mb-6 rounded-xl border border-card-border bg-card-bg p-5">
           <div className="mb-4 flex items-center gap-2">
