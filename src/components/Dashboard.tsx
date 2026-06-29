@@ -12,6 +12,7 @@ import PriceHistory from "@/components/PriceHistory";
 import ContactSection from "@/components/ContactSection";
 import ChatWidget from "@/components/ChatWidget";
 import PageGuide from "@/components/PageGuide";
+import Reveal from "@/components/ui/Reveal";
 import Link from "next/link";
 import { TrendingUp, ChevronRight } from "lucide-react";
 import {
@@ -129,8 +130,8 @@ function DashboardContent() {
         />
 
         {/* Hero */}
-        <div className="mb-6" id="dashboard">
-          <h1 className="text-2xl font-bold tracking-tight text-foreground">
+        <div className="animate-fade-in-up mb-6" id="dashboard">
+          <h1 className="text-2xl font-bold tracking-tight text-foreground lg:text-3xl">
             {t("hero_title")}
           </h1>
           <p className="mt-1 text-sm text-muted">
@@ -154,12 +155,12 @@ function DashboardContent() {
           <MedianStats data={filtered} filters={filters} />
 
           {/* Charts */}
-          <Charts data={filtered} />
+          <Reveal><Charts data={filtered} /></Reveal>
 
           {/* Trends → dedicated /trends page */}
           <Link
             href="/trends"
-            className="group flex items-center justify-between gap-4 rounded-xl border border-accent/25 bg-gradient-to-r from-accent/10 via-card-bg to-card-bg px-5 py-4 transition-colors hover:border-accent/50"
+            className="group flex items-center justify-between gap-4 rounded-xl border border-accent/25 bg-gradient-to-r from-accent/10 via-card-bg to-card-bg px-5 py-4 transition-colors hover:border-accent/50 hover-lift"
           >
             <div className="flex items-center gap-3">
               <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-accent/15">
@@ -181,13 +182,13 @@ function DashboardContent() {
           </Link>
 
           {/* Price History */}
-          <PriceHistory data={filtered} />
+          <Reveal><PriceHistory data={filtered} /></Reveal>
 
           {/* Map */}
-          <MapView data={filtered} />
+          <Reveal><MapView data={filtered} /></Reveal>
 
           {/* Transaction Table */}
-          <TransactionTable data={filtered} />
+          <Reveal><TransactionTable data={filtered} /></Reveal>
 
           {/* Contact Section */}
           <ContactSection />
