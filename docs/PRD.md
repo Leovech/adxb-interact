@@ -371,3 +371,292 @@ Fields: email, password. **Demo mode: any valid-format email + any non-empty pas
 - Property valuations are **modelled estimates**, not appraisals.
 - Watchlist, Alerts, and Feedback-history tiles on `/account` are **scaffolded/disabled** placeholders.
 - Cron jobs are limited to 2 (Vercel plan constraint).
+
+---
+
+# Appendix A — API reference for testing
+
+Base URL (production): `https://adxb-interact.vercel.app`
+
+All endpoints return JSON. Auth-protected endpoints are stubbed for the demo —
+see each entry. Env-dependent endpoints (`import-csv`, `auto-sync`) will return
+a `500` "Server not configured" JSON body when their env vars are unset, which
+is the expected state on the public demo unless the owner has configured them.
+
+Conventions:
+- Content-Type for JSON request bodies: `application/json`.
+- Timestamps are ISO-8601 UTC strings.
+- Unless noted, GET endpoints need no auth.
+
+---
+
+## A.1 Static data endpoints (read-only)
+
+These back every client page. Good for data-integrity tests.
+
+### GET `/data/transactions.json`
+- **Auth:** none. **Params:** none.
+- **200** body shape (compact, lookup-encoded):
+  ```json
+  {
+    "l": { "di": ["Al Reem Island", "..."], "pn": ["Pixel", "..."],
+           "co": ["..."], "ac": ["residential"], "pt": ["Apartment", "..."] },
+    "r": [ ["2026-06-24", 0, 0, 4812, 3, 5, 12, 44, 16107777, 3347, 0, 0, 447.06], "..." ]
+  }
+  ```
+  Each `r` row = `[date, acIdx, ptIdx, sizeSqft, bedrooms, diIdx, coIdx, pnIdx, price, rateSqft, statusCode, seqCode, sizeSqm]`.
+- **Tests:** `l.di`, `l.pn`, `l.pt` are non-empty arrays; `r.length` > 100000; every row has 13 elements; `price` (index 8) > 0.
+
+### GET `/data/hierarchy.json`
+- **Auth:** none.
+- **200** body:
+  ```json
+  {
+    "districts": [ { "id": "al-reem-island", "name": "Al Reem Island", "count": 26026, "projectCount": 80 } ],
+    "projects":  [ { "id": "pixel", "name": "Pixel", "district": "Al Reem Island", "community": "RS4", "count": 726 } ]
+  }
+  ```
+- **Tests:** `districts` and `projects` non-empty; every project's `district` exists in `districts[].name`; counts are positive integers.
+
+---
+
+## A.2 POST `/api/feedback`
+
+Store a recommendation thumbs-up/down. Used by the Market Analysis feedback box.
+
+- **Auth:** none.
+- **Request headers:** `Content-Type: application/json`
+- **Request body:**
+  ```json
+  {
+    "item_key": "Pixel|1",          // required, string  (project|bedrooms)
+    "sentiment": "up",              // required, "up" | "down"
+    "comment": "asking too high",   // optional, string
+    "page": "market-analysis",      // optional, string
+    "user_id": "usr_abc123",        // optional, string
+    "context": { "verdict": "buy", "score": 96 }  // optional, object
+  }
+  ```
+- **200 success:**
+  ```json
+  { "ok": true, "received_at": "2026-07-02T10:00:00.000Z" }
+  ```
+- **Errors:**
+  | Condition | Status | Body |
+  |---|---|---|
+  | Body not valid JSON | 400 | `{ "error": "Invalid JSON" }` |
+  | `item_key` missing/not string | 400 | `{ "error": "item_key required" }` |
+  | `sentiment` not "up"/"down" | 400 | `{ "error": "sentiment must be 'up' or 'down'" }` |
+
+- **Test cases:**
+  - T1: valid `up` → 200, `ok:true`, `received_at` is ISO date.
+  - T2: valid `down` with `comment` → 200.
+  - T3: missing `item_key` → 400.
+  - T4: `sentiment:"maybe"` → 400.
+  - T5: empty/non-JSON body → 400.
+
+### GET `/api/feedback`  (health/QA)
+- **200:** `{ "ok": true, "count": <int>, "latest": [ ...last 5 entries... ] }`
+- **Note:** storage is in-memory per serverless instance; a POST then GET may hit a different instance and not reflect the write. Treat GET as a health check, not a durable read.
+
+---
+
+## A.3 GET `/api/mls/status`
+
+Last MLS crawl status for the "Agent status" banner on `/mls`.
+
+- **Auth:** none. **Params:** none.
+- **200** body:
+  ```json
+  {
+    "lastRun": "2026-07-02T09:00:00.000Z",
+    "nextRun": "2026-07-03T09:00:00.000Z",
+    "durationMs": 4217,
+    "projectsCrawled": 312,
+    "listingsFound": 8742,
+    "distressFound": 437,
+    "status": "success",
+    "errorMessage": null,
+    "isScheduled": true,
+    "cronExpression": "0 9 * * *",
+    "cronTimezone": "UTC (13:00 Dubai)",
+    "synthetic": true
+  }
+  ```
+- **Tests:** always 200; `lastRun` and `nextRun` are ISO dates with `nextRun` > `lastRun`; `status` ∈ {idle, running, success, error}; numeric counts ≥ 0.
+
+---
+
+## A.4 GET `/api/mls/crawl`  (cron)
+
+Updates the crawl timestamp. Scheduled daily at 09:00 UTC.
+
+- **Auth:** if `CRON_SECRET` env is set, requires header `Authorization: Bearer <CRON_SECRET>`. If unset, open.
+- **200 success:** `{ "ok": true, "lastRun": "...", "nextRun": "...", "durationMs": <int>, "projectsCrawled": 312, "listingsFound": 8742, "distressFound": 437, "status": "success", "errorMessage": null }`
+- **401** when `CRON_SECRET` set and header missing/wrong: `{ "error": "Unauthorized" }`
+- **Note:** the handler sleeps ~1.2–2.0s (simulated crawl) before responding.
+- **Tests:**
+  - T1: with correct Bearer (or no secret configured) → 200, `ok:true`, `status:"success"`.
+  - T2: with `CRON_SECRET` configured and wrong/no header → 401.
+
+---
+
+## A.5 GET `/api/revalidate`  (cron)
+
+Revalidates cached pages after a data refresh.
+
+- **Auth:** header `Authorization: Bearer <CRON_SECRET>` when `CRON_SECRET` is set; else open.
+- **200:** `{ "revalidated": true, "paths": ["/", "/mls", "/mls/report"], "timestamp": "...", "message": "Data refresh triggered successfully" }`
+- **401** when secret set and header wrong: `{ "error": "Unauthorized" }`
+- **500** on failure: `{ "error": "Revalidation failed", "reason": "<msg>" }`
+
+---
+
+## A.6 GET `/api/analytics/refresh`  (cron)
+
+Recomputes momentum + supply/demand + recommendations, then revalidates.
+
+- **Auth:** `Authorization: Bearer <CRON_SECRET>` when set; else open.
+- **200:**
+  ```json
+  {
+    "ok": true,
+    "computedAt": "2026-07-02T09:30:00.000Z",
+    "durationMs": 1234,
+    "projectsAnalyzed": 1011,
+    "recommendations": { "total": 50, "buy": 50, "watch": 0, "avoid": 0 },
+    "top": [ { "key": "Mayyas at the Bay|0", "opportunityScore": 96, "verdict": "buy", "...": "..." } ],
+    "paths": ["/market-analysis", "/trends", "/"]
+  }
+  ```
+- **401** when secret set and header wrong: `{ "error": "Unauthorized" }`
+- **500** on internal error: `{ "ok": false, "error": "<msg>" }`
+- **Tests:** with valid/no-secret → 200, `ok:true`, `projectsAnalyzed` > 0, `recommendations.total` ≥ 1, `top` is an array, every `top[].opportunityScore` in 0..100.
+
+---
+
+## A.7 POST `/api/admin/import-csv`
+
+Manual CSV upload (from `/admin/upload`). Parses + commits data to the repo.
+
+- **Auth:** `password` form field must equal `ADMIN_PASSWORD` env.
+- **Request:** `multipart/form-data`
+  | Field | Required | Notes |
+  |---|---|---|
+  | `file` | yes | the CSV (may be gzip-compressed, see `compressed`) |
+  | `password` | yes | admin password |
+  | `compressed` | no | `"gzip"` if the file body is gzip-compressed |
+  | `originalSize` | no | original byte size (informational) |
+- **200 success:**
+  ```json
+  {
+    "ok": true,
+    "stats": { "totalRows": 116326, "validRows": 116252, "skipped": 74,
+               "districts": 133, "projects": 370, "communities": 931,
+               "fileSizeBytes": 6712345 },
+    "commits": { "transactions": "https://github.com/.../commit/abc",
+                 "hierarchy": "https://github.com/.../commit/def" },
+    "message": "Files committed. Vercel will redeploy in ~2 minutes."
+  }
+  ```
+- **Errors:**
+  | Condition | Status | Body |
+  |---|---|---|
+  | `ADMIN_PASSWORD` env unset | 500 | `{ "error": "Server not configured. Missing env var: ADMIN_PASSWORD" }` |
+  | GitHub env vars unset | 500 | `{ "error": "Server not configured. Missing env vars: GITHUB_TOKEN, ..." }` |
+  | Bad multipart body | 400 | `{ "error": "Invalid multipart body" }` |
+  | Wrong password | 401 | `{ "error": "Wrong admin password" }` |
+  | Missing `file` | 400 | `{ "error": "Missing \`file\` field" }` |
+  | File unreadable/decompress fail | 400 | `{ "error": "Failed to read file: ..." }` |
+  | CSV < 100 bytes | 400 | `{ "error": "CSV is too small / empty" }` |
+  | CSV parse throws | 400 | `{ "error": "<parse message>" }` |
+  | < 100 valid rows | 400 | `{ "error": "Suspiciously few rows (N). Aborting...", "stats": {...} }` |
+  | GitHub commit fails | 502 | `{ "error": "GitHub PUT ... failed: ...", "stats": {...} }` |
+- **Body limit:** Vercel caps the request body (~4.5 MB); larger uploads should be gzip-compressed client-side. A too-large body returns a non-JSON `413` from the platform (tests should handle a non-JSON error here).
+- **Test cases (safe on demo — env is unset):**
+  - T1: POST with any password and no env → 500 "Server not configured".
+  - (If env configured) T2: wrong password → 401; T3: missing file → 400; T4: tiny CSV → 400.
+
+---
+
+## A.8 GET `/api/admin/auto-sync`  (cron + manual)
+
+Daily data refresh: fetch CSV from `ADREC_CSV_URL`, parse, commit.
+
+- **Auth (either works):**
+  - `Authorization: Bearer <CRON_SECRET>`  (used by Vercel cron), or
+  - `X-Admin-Password: <ADMIN_PASSWORD>`  (manual trigger from the admin UI).
+- **200 success:**
+  ```json
+  {
+    "ok": true,
+    "syncedAt": "2026-07-02T06:00:01.000Z",
+    "source": { "url": "https://.../file.csv", "sizeBytes": 17234567, "fetchedMs": 1234 },
+    "parse": { "totalRows": 116326, "validRows": 116252, "skipped": 74,
+               "districts": 133, "projects": 370, "communities": 931 },
+    "commits": { "transactions": "https://github.com/.../commit/abc",
+                 "hierarchy": "https://github.com/.../commit/def" },
+    "message": "Auto-sync committed. Vercel will redeploy in ~2 minutes."
+  }
+  ```
+- **200 no-op** (source unchanged since last sync):
+  ```json
+  { "ok": true, "syncedAt": "...", "source": {...},
+    "parse": { "totalRows": 0, "validRows": 0, "...": 0 },
+    "skipped": { "reason": "Source CSV unchanged since last sync (hash match)" },
+    "message": "No update needed — source data unchanged." }
+  ```
+- **Errors:**
+  | Condition | Status | Body |
+  |---|---|---|
+  | No `CRON_SECRET` and no `ADMIN_PASSWORD` configured | 500 | `{ "error": "Auth not configured" }` |
+  | Auth configured but header wrong | 401 | `{ "error": "Unauthorized" }` |
+  | `ADREC_CSV_URL` unset | 500 | `{ "error": "ADREC_CSV_URL env var not set. ..." }` |
+  | GitHub env vars unset | 500 | `{ "error": "Server not configured. Missing env vars: ..." }` |
+  | Source URL non-200 | 502 | `{ "error": "Source URL returned <code>: ..." }` |
+  | Source fetch throws | 502 | `{ "error": "Failed to fetch source CSV: ..." }` |
+  | Source CSV < 1000 bytes | 502 | `{ "error": "Source CSV suspiciously small (N bytes). Aborting." }` |
+  | Parse throws | 400 | `{ "error": "<parse message>" }` |
+  | < 1000 valid rows | 400 | `{ "error": "Suspiciously few valid rows (N). Aborting...", "stats": {...} }` |
+  | GitHub commit fails | 502 | `{ "error": "GitHub PUT ... failed", "stats": {...} }` |
+- **Test cases (safe on demo):**
+  - T1: GET with no auth headers and nothing configured → 500 (fail-closed).
+  - T2: GET with wrong `X-Admin-Password` (auth configured) → 401.
+
+---
+
+## A.9 Auth model (for API-adjacent UI tests)
+
+There is **no server auth API** in the demo — sign-in/up/session are handled
+client-side in the browser via `localStorage` (keys: `adxb-session-v1`,
+`adxb-portfolio-<userId>`, `adxb-recommendation-feedback`, `adxb-lang`,
+`adxb-theme`, `adxb-guide-*`). API tests should not expect `/api/auth/*`
+endpoints. To test authenticated UI, drive the sign-in form or seed
+`localStorage` directly.
+
+- Session shape (localStorage `adxb-session-v1`):
+  ```json
+  { "user": { "id": "usr_x", "email": "you@example.com", "userType": "investor",
+              "interests": [], "preferredDistricts": [], "preferredPropertyTypes": [],
+              "preferredBedrooms": [], "tier": "registered", "createdAt": "..." },
+    "token": "tok_x", "expiresAt": "2026-08-01T00:00:00.000Z" }
+  ```
+
+---
+
+## A.10 Summary matrix
+
+| Method | Path | Auth | Success | Notable errors |
+|---|---|---|---|---|
+| GET | `/data/transactions.json` | none | 200 JSON | — |
+| GET | `/data/hierarchy.json` | none | 200 JSON | — |
+| POST | `/api/feedback` | none | 200 `{ok}` | 400 |
+| GET | `/api/feedback` | none | 200 `{ok,count}` | — |
+| GET | `/api/mls/status` | none | 200 status | — |
+| GET | `/api/mls/crawl` | Bearer CRON_SECRET* | 200 `{ok}` | 401 |
+| GET | `/api/revalidate` | Bearer CRON_SECRET* | 200 | 401, 500 |
+| GET | `/api/analytics/refresh` | Bearer CRON_SECRET* | 200 | 401, 500 |
+| POST | `/api/admin/import-csv` | `password` field | 200 `{ok,stats}` | 400, 401, 500, 502 |
+| GET | `/api/admin/auto-sync` | Bearer or X-Admin-Password | 200 `{ok}` | 401, 400, 500, 502 |
+
+\* Auth enforced only when `CRON_SECRET` is set in the environment; otherwise the endpoint is open.
