@@ -1,0 +1,30 @@
+#!/usr/bin/env bash
+#
+# Pre-push guard (ECC GateGuard-inspired). Blocks a push if tests, the
+# production build, or the secret scan fail — so we never push code that
+# breaks the Vercel deploy.
+#
+# Enable once with:  npm run setup-hooks
+# Bypass in an emergency with:  git push --no-verify
+set -uo pipefail
+
+echo "▶ pre-push: secret scan…"
+if ! bash scripts/secret-scan.sh; then
+  echo "✗ pre-push blocked: secret scan failed."
+  exit 1
+fi
+
+echo "▶ pre-push: running tests…"
+if ! npm test; then
+  echo "✗ pre-push blocked: tests failed. Fix them or push with --no-verify."
+  exit 1
+fi
+
+echo "▶ pre-push: production build…"
+if ! npm run build; then
+  echo "✗ pre-push blocked: build failed. Fix it or push with --no-verify."
+  exit 1
+fi
+
+echo "✓ pre-push checks passed."
+exit 0

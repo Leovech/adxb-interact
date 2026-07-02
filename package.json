@@ -9,7 +9,9 @@
     "lint": "eslint",
     "test": "node --import tsx --test tests/*.test.ts",
     "import-csv": "node scripts/process-csv.mjs",
-    "recommendations": "tsx scripts/run-recommendations.ts"
+    "recommendations": "tsx scripts/run-recommendations.ts",
+    "secret-scan": "bash scripts/secret-scan.sh",
+    "setup-hooks": "git config core.hooksPath .githooks && echo 'Git hooks enabled (.githooks). Pre-push now runs secret-scan + tests + build.'"
   },
   "dependencies": {
     "@tanstack/react-table": "^8.21.3",
