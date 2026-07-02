@@ -19,6 +19,7 @@ import {
   LineChart,
   MapPin,
   Zap,
+  Bot,
 } from "lucide-react";
 
 /** Headline stats — reflect the current ADREC dataset. */
@@ -50,6 +51,13 @@ const FEATURES = [
     body: "Ranked Buy / Watch / Avoid recommendations with a transparent opportunity score and plain-English reasoning anchored in real numbers.",
     href: "/market-analysis",
     cta: "See recommendations",
+  },
+  {
+    icon: Bot,
+    title: "Ask the AI assistant",
+    body: "Type a question in plain English — \"cheapest studio in Yas Island\" or \"2BR with yield above 7%\" — and get real numbers back instantly.",
+    href: "/assistant",
+    cta: "Start chatting",
   },
   {
     icon: Search,

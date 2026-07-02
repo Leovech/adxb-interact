@@ -237,8 +237,12 @@ export function parseSmartSearch(
   });
 
   // 6. Match districts (try longest names first, diacritic-folded)
+  // Some source rows have a blank district/project (ADREC export gaps) —
+  // normalize("") === "" and "anything".indexOf("") is always 0, so an
+  // un-guarded empty entry would silently "match" every query. Skip blanks.
   const districtNames = hierarchy.districts
     .map((d) => ({ name: d.name, norm: normalize(d.name) }))
+    .filter((d) => d.norm.length > 0)
     .sort((a, b) => b.norm.length - a.norm.length);
 
   for (const d of districtNames) {
@@ -256,6 +260,7 @@ export function parseSmartSearch(
   // 7. Match projects (try longest names first, only if no district matched or after district)
   const projectNames = hierarchy.projects
     .map((p) => ({ name: p.name, district: p.district, norm: normalize(p.name) }))
+    .filter((p) => p.norm.length > 0)
     .sort((a, b) => b.norm.length - a.norm.length);
 
   for (const proj of projectNames) {

@@ -17,6 +17,7 @@ type TranslationStrings = {
   nav_dashboard: string;
   nav_trends: string;
   nav_market_analysis: string;
+  nav_assistant: string;
   nav_account: string;
   nav_sign_in: string;
   nav_sign_up: string;
@@ -318,6 +319,7 @@ const en: TranslationStrings = {
   nav_dashboard: "Dashboard",
   nav_trends: "Trends",
   nav_market_analysis: "Market Analysis",
+  nav_assistant: "AI Assistant",
   nav_account: "Account",
   nav_sign_in: "Sign in",
   nav_sign_up: "Sign up",
@@ -619,6 +621,7 @@ const ar: TranslationStrings = {
   nav_dashboard: "لوحة المعلومات",
   nav_trends: "الاتجاهات",
   nav_market_analysis: "تحليل السوق",
+  nav_assistant: "المساعد الذكي",
   nav_account: "الحساب",
   nav_sign_in: "تسجيل الدخول",
   nav_sign_up: "إنشاء حساب",
@@ -920,6 +923,7 @@ const ru: TranslationStrings = {
   nav_dashboard: "Панель",
   nav_trends: "Тренды",
   nav_market_analysis: "Анализ рынка",
+  nav_assistant: "AI-помощник",
   nav_account: "Аккаунт",
   nav_sign_in: "Войти",
   nav_sign_up: "Регистрация",

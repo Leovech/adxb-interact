@@ -205,3 +205,35 @@ describe("MLS listing groups visibility", () => {
     // pagination; the data layer itself must not drop anything.
   });
 });
+
+describe("parseSmartSearch — blank district/project entries must never false-match (regression)", () => {
+  // ADREC export gaps sometimes produce a hierarchy entry with an empty
+  // name (a real transaction had a blank project/district field). Because
+  // normalize("") === "" and "anything".indexOf("") is always 0, an
+  // un-guarded matching loop would silently treat every query as matching
+  // that blank entry — e.g. "most expensive penthouse" (no district
+  // mentioned) was incorrectly scoped to whatever district the blank
+  // project happened to belong to.
+  const hierarchyWithBlankEntries: Hierarchy = {
+    districts: [
+      { id: "al-reem-island", name: "Al Reem Island", count: 1200, projectCount: 20 },
+      { id: "", name: "", count: 2, projectCount: 1 }, // malformed row
+    ],
+    projects: [
+      { id: "reem-heights", name: "Reem Heights", district: "Al Reem Island", community: "Najmat", count: 80 },
+      { id: "", name: "", district: "Al Reem Island", community: "RT4", count: 2 }, // malformed row
+    ],
+  };
+
+  it("does not set a district/project filter when the query matches nothing real", () => {
+    const parsed = parseSmartSearch("most expensive penthouse", hierarchyWithBlankEntries);
+    assert.equal(parsed.filters.district, undefined);
+    assert.equal(parsed.filters.project, undefined);
+  });
+
+  it("still correctly matches a real district/project alongside the blank entries", () => {
+    const parsed = parseSmartSearch("reem heights villa", hierarchyWithBlankEntries);
+    assert.equal(parsed.filters.project, "Reem Heights");
+    assert.equal(parsed.filters.district, "Al Reem Island");
+  });
+});

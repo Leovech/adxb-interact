@@ -56,6 +56,7 @@ export default function Header() {
     { label: t("nav_trends"), href: "/trends" },
     { label: t("nav_market_analysis"), href: "/market-analysis" },
     { label: t("nav_mls"), href: "/mls" },
+    { label: t("nav_assistant"), href: "/assistant" },
   ];
 
   const langFlag: Record<Locale, string> = {
