@@ -114,8 +114,8 @@ export default function MapView({ data }: MapViewProps) {
           el.style.cssText = `
             width: ${size}px;
             height: ${size}px;
-            background: radial-gradient(circle, rgba(196,160,78,0.8) 0%, rgba(196,160,78,0.2) 70%, transparent 100%);
-            border: 2px solid rgba(196,160,78,0.9);
+            background: radial-gradient(circle, rgba(217,164,65,0.8) 0%, rgba(217,164,65,0.2) 70%, transparent 100%);
+            border: 2px solid rgba(217,164,65,0.9);
             border-radius: 50%;
             display: flex;
             align-items: center;
@@ -124,7 +124,7 @@ export default function MapView({ data }: MapViewProps) {
             transition: transform 0.2s;
             font-size: 10px;
             font-weight: 700;
-            color: #fff;
+            color: #ede9e3;
           `;
           el.textContent =
             stat.count > 999
@@ -143,9 +143,9 @@ export default function MapView({ data }: MapViewProps) {
             closeButton: false,
             maxWidth: "260px",
           }).setHTML(`
-            <div style="background:#222d30;color:#f1decb;padding:12px;border-radius:8px;font-family:system-ui;border:1px solid #374144;">
-              <div style="font-size:14px;font-weight:700;color:#c4a04e;margin-bottom:6px;">${district}</div>
-              <div style="font-size:12px;color:#b0aca7;line-height:1.7;">
+            <div style="background:#211e1a;color:#ede9e3;padding:12px;border-radius:8px;font-family:system-ui;border:1px solid #383329;">
+              <div style="font-size:14px;font-weight:700;color:#d9a441;margin-bottom:6px;">${district}</div>
+              <div style="font-size:12px;color:#a89f92;line-height:1.7;">
                 <div><b>${formatNumber(stat.count)}</b> ${t("transactions_label")}</div>
                 <div>${t("total_label")} <b>${formatAED(stat.totalValue)}</b></div>
                 <div>${t("avg_label")} <b>AED ${formatNumber(avgRate)}</b>/sqft</div>

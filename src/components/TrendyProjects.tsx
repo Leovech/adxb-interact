@@ -19,9 +19,9 @@ interface TrendyProjectsProps {
 type TrendCategory = "sale_ready" | "sale_offplan" | "primary";
 
 const categoryColors: Record<TrendCategory, string> = {
-  sale_ready: "#c4a04e",
-  sale_offplan: "#d4b46a",
-  primary: "#7cb87a",
+  sale_ready: "#d9a441",
+  sale_offplan: "#e4b55c",
+  primary: "#7fb685",
 };
 
 interface MonthlyProjectRank {

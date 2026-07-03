@@ -26,27 +26,27 @@ interface ChartsProps {
 }
 
 const COLORS = [
-  "#c4a04e",
-  "#d4b46a",
-  "#a08535",
-  "#e3c882",
-  "#7cb87a",
-  "#8b7340",
-  "#788182",
-  "#b0aca7",
-  "#5c6d2e",
-  "#c95d4a",
+  "#d9a441",
+  "#e4b55c",
+  "#b8823a",
+  "#eec97a",
+  "#7fb685",
+  "#8c6f3f",
+  "#8a8275",
+  "#a89f92",
+  "#66763a",
+  "#c97a6d",
 ];
 
 const tooltipStyle = {
   contentStyle: {
-    background: "#222d30",
-    border: "1px solid #374144",
+    background: "#211e1a",
+    border: "1px solid #383329",
     borderRadius: "8px",
     fontSize: "12px",
-    color: "#f1decb",
+    color: "#ede9e3",
   },
-  labelStyle: { color: "#b0aca7" },
+  labelStyle: { color: "#a89f92" },
 };
 
 export default function Charts({ data }: ChartsProps) {
@@ -139,17 +139,17 @@ export default function Charts({ data }: ChartsProps) {
           <AreaChart data={monthlyVolume}>
             <defs>
               <linearGradient id="volumeGrad" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor="#c4a04e" stopOpacity={0.3} />
-                <stop offset="95%" stopColor="#c4a04e" stopOpacity={0} />
+                <stop offset="5%" stopColor="#d9a441" stopOpacity={0.3} />
+                <stop offset="95%" stopColor="#d9a441" stopOpacity={0} />
               </linearGradient>
             </defs>
-            <CartesianGrid strokeDasharray="3 3" stroke="#374144" />
+            <CartesianGrid strokeDasharray="3 3" stroke="#383329" />
             <XAxis
               dataKey="month"
-              tick={{ fontSize: 11, fill: "#b0aca7" }}
+              tick={{ fontSize: 11, fill: "#a89f92" }}
               tickFormatter={formatMonth}
             />
-            <YAxis tick={{ fontSize: 11, fill: "#b0aca7" }} />
+            <YAxis tick={{ fontSize: 11, fill: "#a89f92" }} />
             <Tooltip
               {...tooltipStyle}
               formatter={(value) => [
@@ -160,7 +160,7 @@ export default function Charts({ data }: ChartsProps) {
             <Area
               type="monotone"
               dataKey="count"
-              stroke="#c4a04e"
+              stroke="#d9a441"
               fill="url(#volumeGrad)"
               strokeWidth={2}
             />
@@ -175,13 +175,13 @@ export default function Charts({ data }: ChartsProps) {
         </h3>
         <ResponsiveContainer width="100%" height={280}>
           <LineChart data={avgRateTrend}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#374144" />
+            <CartesianGrid strokeDasharray="3 3" stroke="#383329" />
             <XAxis
               dataKey="month"
-              tick={{ fontSize: 11, fill: "#b0aca7" }}
+              tick={{ fontSize: 11, fill: "#a89f92" }}
               tickFormatter={formatMonth}
             />
-            <YAxis tick={{ fontSize: 11, fill: "#b0aca7" }} />
+            <YAxis tick={{ fontSize: 11, fill: "#a89f92" }} />
             <Tooltip
               {...tooltipStyle}
               formatter={(value) => [
@@ -192,7 +192,7 @@ export default function Charts({ data }: ChartsProps) {
             <Line
               type="monotone"
               dataKey="avgRate"
-              stroke="#d4b46a"
+              stroke="#e4b55c"
               strokeWidth={2}
               dot={false}
             />
@@ -207,13 +207,13 @@ export default function Charts({ data }: ChartsProps) {
         </h3>
         <ResponsiveContainer width="100%" height={280}>
           <BarChart data={districtBreakdown} layout="vertical">
-            <CartesianGrid strokeDasharray="3 3" stroke="#374144" />
-            <XAxis type="number" tick={{ fontSize: 11, fill: "#b0aca7" }} />
+            <CartesianGrid strokeDasharray="3 3" stroke="#383329" />
+            <XAxis type="number" tick={{ fontSize: 11, fill: "#a89f92" }} />
             <YAxis
               type="category"
               dataKey="district"
               width={120}
-              tick={{ fontSize: 11, fill: "#b0aca7" }}
+              tick={{ fontSize: 11, fill: "#a89f92" }}
             />
             <Tooltip
               {...tooltipStyle}
@@ -291,10 +291,10 @@ export default function Charts({ data }: ChartsProps) {
                     key={i}
                     fill={
                       entry.name === t("off_plan")
-                        ? "#c4a04e"
+                        ? "#d9a441"
                         : entry.name === t("ready")
-                          ? "#7cb87a"
-                          : "#788182"
+                          ? "#7fb685"
+                          : "#8a8275"
                     }
                   />
                 ))}
