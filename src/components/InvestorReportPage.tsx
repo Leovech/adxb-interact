@@ -30,9 +30,12 @@ import {
   InvestorReport,
   MonthlyPoint,
 } from "@/lib/investor-report";
+import CalculatorPanel from "@/components/CalculatorPanel";
+import { downloadCSV } from "@/lib/csv-export";
 import {
   ArrowLeft,
   Printer,
+  Download,
   Building2,
   MapPin,
   TrendingUp,
@@ -198,12 +201,38 @@ function ReportContent({ project, bedrooms }: Props) {
           >
             <ArrowLeft className="h-4 w-4" /> Back to MLS Compare
           </a>
-          <button
-            onClick={() => window.print()}
-            className="inline-flex items-center gap-2 rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-background hover:bg-accent-hover"
-          >
-            <Printer className="h-4 w-4" /> Print / Save as PDF
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() =>
+                downloadCSV(`${report.project}-best-deals.csv`, [
+                  ...report.trend.map((p) => ({
+                    section: "Price trend",
+                    month: p.month,
+                    txCount: p.txCount,
+                    medianPriceAED: p.medianPrice,
+                    medianRateAEDSqft: p.medianRate,
+                  })),
+                  ...report.bestDeals.map((row) => ({
+                    section: "Best deal",
+                    platform: row.listing.platform,
+                    sizeSqft: row.listing.sizeSqft,
+                    askingPriceAED: row.listing.askingPrice,
+                    vsMarketPct: row.discountPct.toFixed(1),
+                    estSavingAED: row.estimatedSavingAED,
+                  })),
+                ] as unknown as Record<string, string | number>[])
+              }
+              className="inline-flex items-center gap-2 rounded-lg border border-card-border bg-card-bg px-4 py-2 text-sm font-semibold text-foreground hover:border-accent/50"
+            >
+              <Download className="h-4 w-4" /> Export CSV
+            </button>
+            <button
+              onClick={() => window.print()}
+              className="inline-flex items-center gap-2 rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-background hover:bg-accent-hover"
+            >
+              <Printer className="h-4 w-4" /> Print / Save as PDF
+            </button>
+          </div>
         </div>
 
         {/* Printable card */}
@@ -394,6 +423,18 @@ function ReportContent({ project, bedrooms }: Props) {
 
           <ReportFooter report={report} />
         </article>
+
+        <div className="mt-6 print:hidden">
+          <CalculatorPanel
+            prefillNonce={1}
+            prefill={{
+              purchasePrice: report.marketPriceMedianAED,
+              sizeSqft: report.typicalSizeSqft,
+              annualRent: report.yieldEstimate.monthlyRentAED * 12,
+              serviceChargeAedSqftYr: 14,
+            }}
+          />
+        </div>
       </main>
     </>
   );

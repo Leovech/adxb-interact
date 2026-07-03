@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import Header from "@/components/Header";
 import PageGuide from "@/components/PageGuide";
 import SparkAreaChart from "@/components/ui/SparkAreaChart";
+import { Skeleton, SkeletonPage } from "@/components/ui/Skeleton";
 import {
   Transaction,
   Hierarchy,
@@ -125,10 +126,11 @@ function AssistantContent() {
     return (
       <>
         <Header />
-        <div className="flex min-h-[60vh] flex-col items-center justify-center gap-3">
-          <Loader2 className="h-10 w-10 animate-spin text-accent" />
-          <p className="text-sm text-muted">Loading market data…</p>
-        </div>
+        <main className="mx-auto w-full max-w-[900px] flex-1 px-4 py-10 lg:px-8">
+          <Skeleton className="mb-6 h-8 w-2/3" />
+          <SkeletonPage cards={2} />
+          <Skeleton className="mt-4 h-32 w-full" />
+        </main>
       </>
     );
   }

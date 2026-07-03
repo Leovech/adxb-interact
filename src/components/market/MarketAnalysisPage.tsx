@@ -5,6 +5,7 @@ import Header from "@/components/Header";
 import PageGuide from "@/components/PageGuide";
 import ContactSection from "@/components/ContactSection";
 import FeedbackBox from "@/components/market/FeedbackBox";
+import WatchStar from "@/components/ui/WatchStar";
 import { useAuth } from "@/components/auth/AuthProvider";
 import {
   Transaction,
@@ -32,6 +33,7 @@ import {
   ArrowUpRight,
   RefreshCw,
   Info,
+  GitCompareArrows,
 } from "lucide-react";
 
 type VerdictFilter = "all" | Verdict;
@@ -208,11 +210,20 @@ export default function MarketAnalysisPage() {
               Ranked opportunities combining ADREC transactions with live PF/Bayut supply
             </p>
           </div>
-          <div className="flex items-center gap-2 rounded-lg border border-card-border bg-card-bg px-3 py-1.5 text-xs text-muted">
-            <RefreshCw className="h-3 w-3 text-accent" />
-            Refreshed {refreshedAt ? new Date(refreshedAt).toLocaleString() : "—"}
-            <span className="mx-1 text-muted/50">·</span>
-            <span>Auto-refresh: daily</span>
+          <div className="flex flex-wrap items-center gap-2">
+            <a
+              href="/compare"
+              className="flex items-center gap-1.5 rounded-lg border border-accent/30 bg-accent/10 px-3 py-1.5 text-xs font-semibold text-accent transition-colors hover:bg-accent/15"
+            >
+              <GitCompareArrows className="h-3.5 w-3.5" />
+              Compare districts &amp; projects
+            </a>
+            <div className="flex items-center gap-2 rounded-lg border border-card-border bg-card-bg px-3 py-1.5 text-xs text-muted">
+              <RefreshCw className="h-3 w-3 text-accent" />
+              Refreshed {refreshedAt ? new Date(refreshedAt).toLocaleString() : "—"}
+              <span className="mx-1 text-muted/50">·</span>
+              <span>Auto-refresh: daily</span>
+            </div>
           </div>
         </div>
 
@@ -361,7 +372,15 @@ function RecommendationCard({ rec }: { rec: Recommendation }) {
                 <MapPin className="h-3 w-3" /> {rec.district} · {rec.propertyType}
               </p>
             </div>
-            <ScorePill score={rec.opportunityScore} />
+            <div className="flex items-center gap-1">
+              <WatchStar
+                type="project"
+                name={rec.project}
+                district={rec.district}
+                rateSqft={rec.signals.projectMedianRate}
+              />
+              <ScorePill score={rec.opportunityScore} />
+            </div>
           </div>
 
           {rec.tags.length > 0 && (

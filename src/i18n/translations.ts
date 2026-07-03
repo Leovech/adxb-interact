@@ -25,6 +25,8 @@ type TranslationStrings = {
   nav_map: string;
   nav_transactions: string;
   nav_mls: string;
+  nav_compare: string;
+  nav_watchlist: string;
   demo_banner: string;
   created_by: string;
   brand_name: string;
@@ -327,6 +329,8 @@ const en: TranslationStrings = {
   nav_map: "Map",
   nav_transactions: "Transactions",
   nav_mls: "Listings vs Sales",
+  nav_compare: "Compare",
+  nav_watchlist: "Watchlist",
   demo_banner: "DEMO",
   created_by: "Created by",
   brand_name: "Sand Square Group",
@@ -629,6 +633,8 @@ const ar: TranslationStrings = {
   nav_map: "الخريطة",
   nav_transactions: "المعاملات",
   nav_mls: "الإعلانات مقابل المبيعات",
+  nav_compare: "مقارنة",
+  nav_watchlist: "قائمة المتابعة",
   demo_banner: "نسخة تجريبية",
   created_by: "من إنشاء",
   brand_name: "ساند سكوير جروب",
@@ -931,6 +937,8 @@ const ru: TranslationStrings = {
   nav_map: "Карта",
   nav_transactions: "Сделки",
   nav_mls: "Объявления vs Сделки",
+  nav_compare: "Сравнение",
+  nav_watchlist: "Избранное",
   demo_banner: "ДЕМО",
   created_by: "Создано",
   brand_name: "Sand Square Group",

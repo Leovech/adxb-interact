@@ -13,6 +13,7 @@ import ContactSection from "@/components/ContactSection";
 import ChatWidget from "@/components/ChatWidget";
 import PageGuide from "@/components/PageGuide";
 import Reveal from "@/components/ui/Reveal";
+import InsightChips from "@/components/ui/InsightChips";
 import Link from "next/link";
 import { TrendingUp, ChevronRight } from "lucide-react";
 import {
@@ -22,14 +23,25 @@ import {
 } from "@/data/abu-dhabi";
 import { FilterState, defaultFilters, applyFilters } from "@/lib/filters";
 import { LanguageProvider, useT } from "@/i18n/LanguageContext";
+import { buildMarketInsights } from "@/lib/analytics/insights";
+import { latestDataMonthLabel } from "@/lib/data-freshness";
 
-function DashboardContent() {
+interface DashboardProps {
+  initialDistrict?: string;
+  initialProject?: string;
+}
+
+function DashboardContent({ initialDistrict = "", initialProject = "" }: DashboardProps) {
   const t = useT();
   const [allData, setAllData] = useState<Transaction[]>([]);
   const [hierarchy, setHierarchy] = useState<Hierarchy | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [filters, setFilters] = useState<FilterState>(defaultFilters);
+  const [filters, setFilters] = useState<FilterState>({
+    ...defaultFilters,
+    ...(initialDistrict ? { district: initialDistrict } : {}),
+    ...(initialProject ? { project: initialProject } : {}),
+  });
 
   useEffect(() => {
     let cancelled = false;
@@ -78,6 +90,13 @@ function DashboardContent() {
     () => applyFilters(allData, filters),
     [allData, filters]
   );
+
+  const insights = useMemo(
+    () => (allData.length && hierarchy ? buildMarketInsights(allData, hierarchy, { limit: 5 }) : []),
+    [allData, hierarchy]
+  );
+
+  const freshness = useMemo(() => latestDataMonthLabel(allData), [allData]);
 
   if (loading) {
     return (
@@ -131,12 +150,18 @@ function DashboardContent() {
 
         {/* Hero */}
         <div className="animate-fade-in-up mb-6" id="dashboard">
-          <h1 className="text-2xl font-bold tracking-tight text-foreground lg:text-3xl">
-            {t("hero_title")}
-          </h1>
+          <div className="flex flex-wrap items-baseline justify-between gap-2">
+            <h1 className="text-2xl font-bold tracking-tight text-foreground lg:text-3xl">
+              {t("hero_title")}
+            </h1>
+            {freshness && (
+              <p className="text-xs text-muted">Data updated: {freshness}</p>
+            )}
+          </div>
           <p className="mt-1 text-sm text-muted">
             {t("hero_subtitle")}
           </p>
+          <InsightChips insights={insights} className="mt-4" />
         </div>
 
         <div className="flex flex-col gap-6">
@@ -206,6 +231,9 @@ function DashboardContent() {
           <p className="mt-1 text-xs text-muted">
             {t("data_source")}
           </p>
+          {freshness && (
+            <p className="mt-1 text-xs text-muted">Data updated: {freshness}</p>
+          )}
         </footer>
       </main>
 
@@ -215,10 +243,10 @@ function DashboardContent() {
   );
 }
 
-export default function Dashboard() {
+export default function Dashboard(props: DashboardProps) {
   return (
     <LanguageProvider>
-      <DashboardContent />
+      <DashboardContent {...props} />
     </LanguageProvider>
   );
 }

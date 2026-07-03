@@ -1,6 +1,6 @@
 "use client";
 
-import { ReactNode } from "react";
+import { ReactNode, useEffect, useState } from "react";
 import { motion, MotionConfig, Variants } from "framer-motion";
 import Header from "@/components/Header";
 import ContactSection from "@/components/ContactSection";
@@ -8,6 +8,9 @@ import { LanguageProvider } from "@/i18n/LanguageContext";
 import AnimatedCounter from "@/components/ui/AnimatedCounter";
 import SparkAreaChart from "@/components/ui/SparkAreaChart";
 import FaqAccordion, { FaqItem } from "@/components/ui/FaqAccordion";
+import InsightChips from "@/components/ui/InsightChips";
+import { Transaction, Hierarchy, decodeTransactions } from "@/data/abu-dhabi";
+import { buildMarketInsights, MarketInsight } from "@/lib/analytics/insights";
 import {
   ArrowRight,
   BarChart3,
@@ -189,6 +192,33 @@ function FadeUp({
 }
 
 function LandingContent() {
+  const [insights, setInsights] = useState<MarketInsight[]>([]);
+
+  useEffect(() => {
+    let cancelled = false;
+    async function loadInsights() {
+      try {
+        const [txRes, hierRes] = await Promise.all([
+          fetch("/data/transactions.json", { cache: "force-cache" }),
+          fetch("/data/hierarchy.json", { cache: "force-cache" }),
+        ]);
+        if (!txRes.ok || !hierRes.ok) return;
+        const [txJson, hierJson] = await Promise.all([txRes.json(), hierRes.json()]);
+        if (cancelled) return;
+        const transactions: Transaction[] = decodeTransactions(txJson);
+        const hierarchy: Hierarchy = hierJson;
+        setInsights(buildMarketInsights(transactions, hierarchy, { limit: 4 }));
+      } catch {
+        // Insight chips are decorative — fail silent, the rest of the
+        // landing page doesn't depend on this data.
+      }
+    }
+    loadInsights();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   return (
     <MotionConfig reducedMotion="user">
       <Header />
@@ -280,6 +310,14 @@ function LandingContent() {
                 Illustrative trend. Live, filterable charts live inside the{" "}
                 <a href="/dashboard" className="text-accent link-underline">dashboard</a>.
               </p>
+              {insights.length > 0 && (
+                <div className="mt-4 border-t border-card-border pt-4">
+                  <p className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-muted">
+                    Market pulse
+                  </p>
+                  <InsightChips insights={insights} />
+                </div>
+              )}
             </div>
           </motion.div>
         </div>
