@@ -1,11 +1,12 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { useInView, useReducedMotion, animate as fmAnimate } from "framer-motion";
 
 interface Props {
   /** Final numeric value */
   value: number;
-  /** Animation duration in ms */
+  /** Animation duration in seconds */
   duration?: number;
   /** Decimal places to show */
   decimals?: number;
@@ -17,13 +18,15 @@ interface Props {
 }
 
 /**
- * Counts up from 0 to `value` when scrolled into view. Uses
- * requestAnimationFrame with an ease-out curve. Respects reduced-motion
- * (jumps straight to the value).
+ * Counts up from 0 to `value` once, the first time it scrolls into view.
+ * Uses framer-motion's useInView (fires correctly even when the element is
+ * already mostly on-screen at initial paint, unlike a bare
+ * IntersectionObserver with a high area threshold). Respects
+ * prefers-reduced-motion (jumps straight to the value).
  */
 export default function AnimatedCounter({
   value,
-  duration = 1400,
+  duration = 1.5,
   decimals = 0,
   prefix = "",
   suffix = "",
@@ -31,61 +34,39 @@ export default function AnimatedCounter({
   className = "",
 }: Props) {
   const ref = useRef<HTMLSpanElement | null>(null);
+  const inView = useInView(ref, { once: true, margin: "0px 0px -10% 0px" });
+  const reduced = useReducedMotion();
   const [display, setDisplay] = useState(0);
-  const started = useRef(false);
 
   useEffect(() => {
-    const el = ref.current;
-    if (!el) return;
-
-    const reduced =
-      typeof window !== "undefined" &&
-      window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
-
-    const run = () => {
-      if (started.current) return;
-      started.current = true;
-      if (reduced) {
-        setDisplay(value);
-        return;
-      }
-      const start = performance.now();
-      const tick = (now: number) => {
-        const p = Math.min(1, (now - start) / duration);
-        // easeOutExpo
-        const eased = p === 1 ? 1 : 1 - Math.pow(2, -10 * p);
-        setDisplay(value * eased);
-        if (p < 1) requestAnimationFrame(tick);
-        else setDisplay(value);
-      };
-      requestAnimationFrame(tick);
-    };
-
-    if (typeof IntersectionObserver === "undefined") {
-      run();
+    if (!inView) return;
+    if (reduced) {
+      setDisplay(value);
       return;
     }
-    const obs = new IntersectionObserver(
-      (entries) => {
-        for (const e of entries) if (e.isIntersecting) run();
-      },
-      { threshold: 0.4 }
-    );
-    obs.observe(el);
-    return () => obs.disconnect();
-  }, [value, duration]);
+    const controls = fmAnimate(0, value, {
+      duration,
+      ease: "easeOut",
+      onUpdate: (v) => setDisplay(v),
+    });
+    return () => controls.stop();
+  }, [inView, value, duration, reduced]);
 
   const formatted = (() => {
     const n = Number(display.toFixed(decimals));
-    return separator ? n.toLocaleString("en-US", {
-      minimumFractionDigits: decimals,
-      maximumFractionDigits: decimals,
-    }) : n.toFixed(decimals);
+    return separator
+      ? n.toLocaleString("en-US", {
+          minimumFractionDigits: decimals,
+          maximumFractionDigits: decimals,
+        })
+      : n.toFixed(decimals);
   })();
 
   return (
     <span ref={ref} className={className}>
-      {prefix}{formatted}{suffix}
+      {prefix}
+      {formatted}
+      {suffix}
     </span>
   );
 }

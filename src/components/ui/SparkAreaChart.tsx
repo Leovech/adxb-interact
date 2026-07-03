@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useId, useRef, useState } from "react";
+import { animate as fmAnimate, useReducedMotion } from "framer-motion";
 
 export interface SparkPoint {
   label: string;
@@ -17,6 +18,8 @@ interface Props {
   className?: string;
   /** Accent css color var name, default --accent */
   color?: string;
+  /** Count the footer's "Now" value up from 0 once the chart draws in */
+  animateNow?: boolean;
 }
 
 /**
@@ -32,11 +35,14 @@ export default function SparkAreaChart({
   formatValue = (n) => n.toLocaleString(),
   showFooter = true,
   className = "",
+  animateNow = false,
 }: Props) {
   const gradId = useId().replace(/:/g, "");
   const svgRef = useRef<SVGSVGElement | null>(null);
   const [hoverIdx, setHoverIdx] = useState<number | null>(null);
   const [animate, setAnimate] = useState(false);
+  const [nowDisplay, setNowDisplay] = useState(0);
+  const reducedMotion = useReducedMotion();
 
   useEffect(() => {
     const el = svgRef.current;
@@ -54,6 +60,22 @@ export default function SparkAreaChart({
     obs.observe(el);
     return () => obs.disconnect();
   }, []);
+
+  useEffect(() => {
+    if (!animateNow || !animate) return;
+    const lastVal = data[data.length - 1]?.value;
+    if (lastVal === undefined) return;
+    if (reducedMotion) {
+      setNowDisplay(lastVal);
+      return;
+    }
+    const controls = fmAnimate(0, lastVal, {
+      duration: 1.2,
+      ease: "easeOut",
+      onUpdate: (v) => setNowDisplay(v),
+    });
+    return () => controls.stop();
+  }, [animateNow, animate, data, reducedMotion]);
 
   if (data.length < 2) {
     return (
@@ -135,7 +157,7 @@ export default function SparkAreaChart({
             style={{
               strokeDasharray: 1,
               strokeDashoffset: animate ? 0 : 1,
-              transition: "stroke-dashoffset 1.1s cubic-bezier(0.22,1,0.36,1)",
+              transition: "stroke-dashoffset 1.2s cubic-bezier(0.22,1,0.36,1)",
             }}
           />
 
@@ -176,7 +198,7 @@ export default function SparkAreaChart({
         <div className="mt-2 grid grid-cols-3 gap-2 border-t border-card-border pt-2 text-[11px]">
           <div>Min <span className="font-semibold text-foreground">{formatValue(min)}</span></div>
           <div className="text-center">Max <span className="font-semibold text-foreground">{formatValue(max)}</span></div>
-          <div className="text-right">Now <span className="font-semibold text-foreground">{formatValue(last)}</span></div>
+          <div className="text-right">Now <span className="font-semibold text-foreground">{formatValue(animateNow ? nowDisplay : last)}</span></div>
         </div>
       )}
     </div>

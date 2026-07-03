@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import Header from "@/components/Header";
 import ContactSection from "@/components/ContactSection";
 import PageGuide from "@/components/PageGuide";
+import WatchStar from "@/components/ui/WatchStar";
 import {
   Transaction,
   Hierarchy,
@@ -315,11 +316,16 @@ export default function TrendsPage() {
                   >
                     <td className="px-4 py-2.5 text-muted">{i + 1}</td>
                     <td className="px-4 py-2.5">
-                      <p className="font-semibold text-foreground">{r.project}</p>
-                      <p className="flex items-center gap-1 text-[11px] text-muted">
-                        <MapPin className="h-2.5 w-2.5" />
-                        {r.district}
-                      </p>
+                      <div className="flex items-center gap-1.5">
+                        <WatchStar type="project" name={r.project} district={r.district} rateSqft={r.medianRate} className="h-5 w-5" />
+                        <div>
+                          <p className="font-semibold text-foreground">{r.project}</p>
+                          <p className="flex items-center gap-1 text-[11px] text-muted">
+                            <MapPin className="h-2.5 w-2.5" />
+                            {r.district}
+                          </p>
+                        </div>
+                      </div>
                     </td>
                     <td className="px-4 py-2.5 text-foreground">{bedroomLabel(r.bedrooms)}</td>
                     <td className="px-4 py-2.5 text-right text-foreground">{r.counts["10d"]}</td>

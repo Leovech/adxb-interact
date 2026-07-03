@@ -1,11 +1,12 @@
 "use client";
 
-import { Menu, X, Sun, Moon, Globe, User as UserIcon, LogIn } from "lucide-react";
+import { Menu, X, Sun, Moon, Globe, User as UserIcon, LogIn, Star } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
 import { useLanguage, useT } from "@/i18n/LanguageContext";
 import { Locale, localeNames } from "@/i18n/translations";
 import LogoMark from "./LogoMark";
 import { useAuth } from "@/components/auth/AuthProvider";
+import { useWatchlist } from "@/lib/watchlist";
 
 export default function Header() {
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -15,6 +16,7 @@ export default function Header() {
   const { locale, setLocale } = useLanguage();
   const t = useT();
   const { user, status } = useAuth();
+  const { items: watchlistItems } = useWatchlist();
 
   // Initialize theme from localStorage on mount
   useEffect(() => {
@@ -56,6 +58,7 @@ export default function Header() {
     { label: t("nav_trends"), href: "/trends" },
     { label: t("nav_market_analysis"), href: "/market-analysis" },
     { label: t("nav_mls"), href: "/mls" },
+    { label: t("nav_compare"), href: "/compare" },
     { label: t("nav_assistant"), href: "/assistant" },
   ];
 
@@ -138,6 +141,21 @@ export default function Header() {
               </div>
             )}
           </div>
+
+          {/* Watchlist */}
+          <a
+            href="/watchlist"
+            className="relative flex h-9 w-9 items-center justify-center rounded-lg border border-input-border text-muted transition-colors hover:border-accent hover:text-accent"
+            aria-label={t("nav_watchlist")}
+            title={t("nav_watchlist")}
+          >
+            <Star className="h-4 w-4" />
+            {watchlistItems.length > 0 && (
+              <span className="absolute -right-1.5 -top-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-accent px-1 text-[9px] font-bold text-background">
+                {watchlistItems.length}
+              </span>
+            )}
+          </a>
 
           {/* Theme Toggle */}
           <button
@@ -255,6 +273,19 @@ export default function Header() {
                 {link.label}
               </a>
             ))}
+            <a
+              href="/watchlist"
+              className="flex items-center gap-2 rounded-lg px-3 py-2.5 text-sm font-medium text-muted hover:bg-card-bg hover:text-foreground"
+              onClick={() => setMobileOpen(false)}
+            >
+              <Star className="h-4 w-4" />
+              {t("nav_watchlist")}
+              {watchlistItems.length > 0 && (
+                <span className="flex h-4 min-w-4 items-center justify-center rounded-full bg-accent px-1 text-[9px] font-bold text-background">
+                  {watchlistItems.length}
+                </span>
+              )}
+            </a>
             <div className="my-2 border-t border-card-border" />
             {status === "authenticated" && user ? (
               <a

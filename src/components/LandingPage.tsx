@@ -1,11 +1,16 @@
 "use client";
 
+import { ReactNode, useEffect, useState } from "react";
+import { motion, MotionConfig, Variants } from "framer-motion";
 import Header from "@/components/Header";
 import ContactSection from "@/components/ContactSection";
 import { LanguageProvider } from "@/i18n/LanguageContext";
-import Reveal from "@/components/ui/Reveal";
 import AnimatedCounter from "@/components/ui/AnimatedCounter";
 import SparkAreaChart from "@/components/ui/SparkAreaChart";
+import FaqAccordion, { FaqItem } from "@/components/ui/FaqAccordion";
+import InsightChips from "@/components/ui/InsightChips";
+import { Transaction, Hierarchy, decodeTransactions } from "@/data/abu-dhabi";
+import { buildMarketInsights, MarketInsight } from "@/lib/analytics/insights";
 import {
   ArrowRight,
   BarChart3,
@@ -20,6 +25,7 @@ import {
   MapPin,
   Zap,
   Bot,
+  Handshake,
 } from "lucide-react";
 
 /** Headline stats — reflect the current ADREC dataset. */
@@ -88,6 +94,57 @@ const STEPS = [
   { icon: FileText, title: "Act with confidence", body: "Generate a report, compare your offer, and negotiate from real data." },
 ];
 
+const PERSONAS = [
+  {
+    icon: TrendingUp,
+    title: "Investor",
+    body: "Compare yields, momentum and discount-to-median across every district to find the best risk-adjusted opportunity.",
+    href: "/market-analysis",
+    cta: "See recommendations",
+  },
+  {
+    icon: Handshake,
+    title: "Broker",
+    body: "Walk into every negotiation with the real closed price, not just the asking price — and back it up with data.",
+    href: "/mls",
+    cta: "Compare listings",
+  },
+  {
+    icon: BarChart3,
+    title: "Analyst",
+    body: "Query the raw transaction dataset directly — filter, chart and export without a scraper or a spreadsheet macro.",
+    href: "/dashboard",
+    cta: "Open dashboard",
+  },
+];
+
+const FAQS: FaqItem[] = [
+  {
+    q: "Where does the data come from?",
+    a: "Every transaction on ADXBInteract comes from ADREC (Abu Dhabi Real Estate Centre) — the government's official record of closed property sales. These are real, closed transactions, not estimates or scraped guesses.",
+  },
+  {
+    q: "How often is the data updated?",
+    a: "The transaction dataset refreshes regularly as new ADREC records become available. Check the \"Data updated\" stamp in the footer and dashboard header for the latest sync date.",
+  },
+  {
+    q: "Is ADXBInteract free to use?",
+    a: "Yes — browsing the dashboard, trends, market analysis and listings comparison is free. Create a free account to save your search preferences and personalize recommendations.",
+  },
+  {
+    q: "How does the AI scoring work?",
+    a: "Each recommendation is a transparent opportunity score built from real signals — discount to area median, momentum, supply vs demand and modelled yield. You can see the reasoning behind every Buy / Watch / Avoid call, not a black box.",
+  },
+  {
+    q: "Who is this built for?",
+    a: "Investors comparing opportunities, brokers who need to negotiate from real numbers, and analysts who want raw transaction data without the guesswork.",
+  },
+  {
+    q: "Do I need to create an account?",
+    a: "No — most of the platform is open to explore without signing up. An account lets you save projects to a watchlist and tailor recommendations to your investment style.",
+  },
+];
+
 /** Representative Abu Dhabi avg rate/sqft trend for the landing preview. */
 const PREVIEW_TREND = [
   { label: "2024 Q1", value: 1180 },
@@ -102,9 +159,68 @@ const PREVIEW_TREND = [
   { label: "Q2", value: 2040 },
 ];
 
-function LandingContent() {
+const EASE_OUT: [number, number, number, number] = [0.22, 1, 0.36, 1];
+
+const fadeUpVariants: Variants = {
+  hidden: { opacity: 0, y: 20 },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.5, ease: EASE_OUT } },
+};
+
+/** Scroll-triggered fade + slide-up. Local to the landing page so the
+ *  shared <Reveal> component (used by Dashboard.tsx) stays untouched. */
+function FadeUp({
+  children,
+  className = "",
+  delay = 0,
+}: {
+  children: ReactNode;
+  className?: string;
+  delay?: number;
+}) {
   return (
-    <>
+    <motion.div
+      className={className}
+      initial="hidden"
+      whileInView="visible"
+      viewport={{ once: true, margin: "-60px" }}
+      variants={fadeUpVariants}
+      transition={{ delay }}
+    >
+      {children}
+    </motion.div>
+  );
+}
+
+function LandingContent() {
+  const [insights, setInsights] = useState<MarketInsight[]>([]);
+
+  useEffect(() => {
+    let cancelled = false;
+    async function loadInsights() {
+      try {
+        const [txRes, hierRes] = await Promise.all([
+          fetch("/data/transactions.json", { cache: "force-cache" }),
+          fetch("/data/hierarchy.json", { cache: "force-cache" }),
+        ]);
+        if (!txRes.ok || !hierRes.ok) return;
+        const [txJson, hierJson] = await Promise.all([txRes.json(), hierRes.json()]);
+        if (cancelled) return;
+        const transactions: Transaction[] = decodeTransactions(txJson);
+        const hierarchy: Hierarchy = hierJson;
+        setInsights(buildMarketInsights(transactions, hierarchy, { limit: 4 }));
+      } catch {
+        // Insight chips are decorative — fail silent, the rest of the
+        // landing page doesn't depend on this data.
+      }
+    }
+    loadInsights();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  return (
+    <MotionConfig reducedMotion="user">
       <Header />
 
       {/* ───────── Hero ───────── */}
@@ -157,40 +273,59 @@ function LandingContent() {
               </div>
             ))}
           </div>
-        </div>
-      </section>
 
-      {/* ───────── Market preview chart ───────── */}
-      <section className="mx-auto max-w-[1100px] px-4 pb-4 lg:px-8">
-        <Reveal>
-          <div className="rounded-2xl border border-card-border bg-card-bg p-5 sm:p-7">
-            <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-widest text-accent">Market pulse</p>
-                <h3 className="mt-1 text-lg font-bold text-foreground">
-                  Abu Dhabi median rate per sqft
-                </h3>
-              </div>
-              <span className="rounded-full bg-positive/15 px-3 py-1 text-xs font-bold text-positive">
-                Hover the line to explore
-              </span>
-            </div>
-            <SparkAreaChart
-              data={PREVIEW_TREND}
-              height={240}
-              formatValue={(n) => `${Math.round(n).toLocaleString()} AED`}
+          {/* Mini price-trend chart — draws itself in on load */}
+          <motion.div
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.55, ease: EASE_OUT }}
+            className="relative mx-auto mt-10 max-w-3xl text-left"
+          >
+            <div
+              className="pointer-events-none absolute -inset-16 -z-10"
+              style={{
+                background:
+                  "radial-gradient(circle at 50% 40%, color-mix(in srgb, var(--accent) 6%, transparent), transparent 70%)",
+              }}
             />
-            <p className="mt-3 text-center text-xs text-muted">
-              Illustrative trend. Live, filterable charts live inside the{" "}
-              <a href="/dashboard" className="text-accent link-underline">dashboard</a>.
-            </p>
-          </div>
-        </Reveal>
+            <div className="rounded-2xl border border-card-border bg-card-bg p-5 sm:p-7">
+              <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-widest text-accent">Market pulse</p>
+                  <h3 className="mt-1 text-lg font-bold text-foreground">
+                    Abu Dhabi median rate per sqft
+                  </h3>
+                </div>
+                <span className="rounded-full bg-positive/15 px-3 py-1 text-xs font-bold text-positive">
+                  Hover the line to explore
+                </span>
+              </div>
+              <SparkAreaChart
+                data={PREVIEW_TREND}
+                height={240}
+                animateNow
+                formatValue={(n) => `${Math.round(n).toLocaleString()} AED`}
+              />
+              <p className="mt-3 text-center text-xs text-muted">
+                Illustrative trend. Live, filterable charts live inside the{" "}
+                <a href="/dashboard" className="text-accent link-underline">dashboard</a>.
+              </p>
+              {insights.length > 0 && (
+                <div className="mt-4 border-t border-card-border pt-4">
+                  <p className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-muted">
+                    Market pulse
+                  </p>
+                  <InsightChips insights={insights} />
+                </div>
+              )}
+            </div>
+          </motion.div>
+        </div>
       </section>
 
       {/* ───────── Features ───────── */}
       <section className="mx-auto max-w-[1280px] px-4 py-16 lg:px-8">
-        <Reveal className="mb-10 text-center">
+        <FadeUp className="mb-10 text-center">
           <p className="text-xs font-semibold uppercase tracking-widest text-accent">Everything in one place</p>
           <h2 className="mt-2 text-3xl font-bold tracking-tight text-foreground">
             A full investor toolkit
@@ -199,40 +334,55 @@ function LandingContent() {
             From raw transactions to ranked recommendations — every tool talks to the same
             clean ADREC data underneath.
           </p>
-        </Reveal>
+        </FadeUp>
 
-        <div className="grid grid-cols-1 gap-5 md:grid-cols-2 lg:grid-cols-3">
-          {FEATURES.map((f, i) => (
-            <Reveal key={f.title} delay={((i % 3) + 1) as 1 | 2 | 3}>
-              <a
-                href={f.href}
-                className="group flex h-full flex-col rounded-2xl border border-card-border bg-card-bg p-6 hover-lift hover:border-accent/40"
-              >
-                <div className="mb-4 inline-flex h-11 w-11 items-center justify-center rounded-xl bg-accent/12 transition-colors group-hover:bg-accent/20">
-                  <f.icon className="h-5 w-5 text-accent" />
-                </div>
-                <h3 className="text-base font-bold text-foreground">{f.title}</h3>
-                <p className="mt-2 flex-1 text-sm leading-relaxed text-muted">{f.body}</p>
-                <span className="mt-4 inline-flex items-center gap-1.5 text-sm font-semibold text-accent">
-                  {f.cta}
-                  <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-1" />
-                </span>
-              </a>
-            </Reveal>
+        <motion.div
+          className="grid grid-cols-1 gap-5 md:grid-cols-2 lg:grid-cols-3"
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true, margin: "-60px" }}
+          variants={{ visible: { transition: { staggerChildren: 0.07 } } }}
+        >
+          {FEATURES.map((f) => (
+            <motion.a
+              key={f.title}
+              href={f.href}
+              variants={fadeUpVariants}
+              whileHover={{ y: -4, transition: { duration: 0.15, ease: "easeOut" } }}
+              className="group flex h-full flex-col rounded-2xl border border-card-border bg-card-bg p-6 transition-colors duration-150 hover:border-accent/40"
+            >
+              <div className="mb-4 inline-flex h-11 w-11 items-center justify-center rounded-xl bg-accent/12 transition-colors group-hover:bg-accent/20">
+                <f.icon className="h-5 w-5 text-accent" />
+              </div>
+              <h3 className="text-base font-bold text-foreground">{f.title}</h3>
+              <p className="mt-2 flex-1 text-sm leading-relaxed text-muted">{f.body}</p>
+              <span className="mt-4 inline-flex items-center gap-1.5 text-sm font-semibold text-accent">
+                {f.cta}
+                <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-1" />
+              </span>
+            </motion.a>
           ))}
-        </div>
+        </motion.div>
       </section>
 
       {/* ───────── How it works ───────── */}
       <section className="relative overflow-hidden border-y border-card-border bg-card-bg/30">
         <div className="mx-auto max-w-[1100px] px-4 py-16 lg:px-8">
-          <Reveal className="mb-10 text-center">
+          <FadeUp className="mb-10 text-center">
             <p className="text-xs font-semibold uppercase tracking-widest text-accent">Three steps</p>
             <h2 className="mt-2 text-3xl font-bold tracking-tight text-foreground">From question to decision</h2>
-          </Reveal>
-          <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
+          </FadeUp>
+          <div className="relative grid grid-cols-1 gap-6 md:grid-cols-3">
+            <motion.div
+              aria-hidden
+              className="pointer-events-none absolute left-[16%] right-[16%] top-[46px] hidden h-px origin-left bg-accent/25 md:block"
+              initial={{ scaleX: 0 }}
+              whileInView={{ scaleX: 1 }}
+              viewport={{ once: true, margin: "-40px" }}
+              transition={{ duration: 0.9, ease: EASE_OUT, delay: 0.15 }}
+            />
             {STEPS.map((s, i) => (
-              <Reveal key={s.title} delay={((i % 3) + 1) as 1 | 2 | 3}>
+              <FadeUp key={s.title} delay={i * 0.08}>
                 <div className="relative rounded-2xl border border-card-border bg-card-bg p-6 hover-lift">
                   <span className="absolute right-5 top-4 text-5xl font-black text-accent/10">{i + 1}</span>
                   <div className="mb-4 inline-flex h-11 w-11 items-center justify-center rounded-xl bg-accent/12">
@@ -241,16 +391,51 @@ function LandingContent() {
                   <h3 className="text-base font-bold text-foreground">{s.title}</h3>
                   <p className="mt-2 text-sm leading-relaxed text-muted">{s.body}</p>
                 </div>
-              </Reveal>
+              </FadeUp>
             ))}
           </div>
         </div>
       </section>
 
+      {/* ───────── Who it's for ───────── */}
+      <section className="mx-auto max-w-[1280px] px-4 py-16 lg:px-8">
+        <FadeUp className="mb-10 text-center">
+          <p className="text-xs font-semibold uppercase tracking-widest text-accent">Built for</p>
+          <h2 className="mt-2 text-3xl font-bold tracking-tight text-foreground">Whoever needs the real numbers</h2>
+        </FadeUp>
+        <motion.div
+          className="grid grid-cols-1 gap-5 md:grid-cols-3"
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true, margin: "-60px" }}
+          variants={{ visible: { transition: { staggerChildren: 0.08 } } }}
+        >
+          {PERSONAS.map((p) => (
+            <motion.a
+              key={p.title}
+              href={p.href}
+              variants={fadeUpVariants}
+              whileHover={{ y: -4, transition: { duration: 0.15, ease: "easeOut" } }}
+              className="group flex flex-col rounded-2xl border border-card-border bg-card-bg p-6 transition-colors duration-150 hover:border-accent/40"
+            >
+              <div className="mb-4 inline-flex h-11 w-11 items-center justify-center rounded-xl bg-accent/12 transition-colors group-hover:bg-accent/20">
+                <p.icon className="h-5 w-5 text-accent" />
+              </div>
+              <h3 className="text-base font-bold text-foreground">{p.title}</h3>
+              <p className="mt-2 flex-1 text-sm leading-relaxed text-muted">{p.body}</p>
+              <span className="mt-4 inline-flex items-center gap-1.5 text-sm font-semibold text-accent">
+                {p.cta}
+                <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-1" />
+              </span>
+            </motion.a>
+          ))}
+        </motion.div>
+      </section>
+
       {/* ───────── Highlight band ───────── */}
       <section className="mx-auto max-w-[1280px] px-4 py-16 lg:px-8">
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-          <Reveal>
+          <FadeUp>
             <div className="flex h-full flex-col justify-center rounded-2xl border border-accent/30 bg-gradient-to-br from-accent/12 via-card-bg to-card-bg p-8">
               <LineChart className="mb-4 h-7 w-7 text-accent" />
               <h3 className="text-2xl font-bold text-foreground">Listings vs actual sales</h3>
@@ -263,8 +448,8 @@ function LandingContent() {
                 Compare prices <ArrowRight className="h-4 w-4" />
               </a>
             </div>
-          </Reveal>
-          <Reveal delay={2}>
+          </FadeUp>
+          <FadeUp delay={0.1}>
             <div className="flex h-full flex-col justify-center rounded-2xl border border-card-border bg-card-bg p-8">
               <div className="mb-4 flex gap-2">
                 <span className="inline-flex items-center gap-1 rounded-full bg-positive/15 px-2.5 py-1 text-[11px] font-bold text-positive"><Zap className="h-3 w-3" /> High momentum</span>
@@ -279,15 +464,26 @@ function LandingContent() {
                 See the analysis <ArrowRight className="h-4 w-4" />
               </a>
             </div>
-          </Reveal>
+          </FadeUp>
         </div>
+      </section>
+
+      {/* ───────── FAQ ───────── */}
+      <section className="mx-auto max-w-[800px] px-4 py-16 lg:px-8">
+        <FadeUp className="mb-10 text-center">
+          <p className="text-xs font-semibold uppercase tracking-widest text-accent">FAQ</p>
+          <h2 className="mt-2 text-3xl font-bold tracking-tight text-foreground">Common questions</h2>
+        </FadeUp>
+        <FadeUp delay={0.05}>
+          <FaqAccordion items={FAQS} />
+        </FadeUp>
       </section>
 
       {/* ───────── Final CTA ───────── */}
       <section className="relative overflow-hidden border-t border-card-border">
         <div className="glow-blob left-1/2 top-0 h-64 w-96 -translate-x-1/2 bg-accent/20" />
         <div className="relative mx-auto max-w-[800px] px-4 py-20 text-center">
-          <Reveal>
+          <FadeUp>
             <Building2 className="mx-auto mb-5 h-10 w-10 text-accent" />
             <h2 className="text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
               Start exploring the market today
@@ -304,7 +500,7 @@ function LandingContent() {
                 Create free account
               </a>
             </div>
-          </Reveal>
+          </FadeUp>
         </div>
       </section>
 
@@ -320,7 +516,7 @@ function LandingContent() {
         <p className="mt-1 text-xs text-muted">ADXBInteract — Abu Dhabi Real Estate Intelligence</p>
         <p className="mt-1 text-xs text-muted">Powered by ADREC data</p>
       </footer>
-    </>
+    </MotionConfig>
   );
 }
 

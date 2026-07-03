@@ -127,7 +127,7 @@ const TIER_2 = new Set([
   "Al Raha Beach", "Khalifa City", "Al Reef", "Hudayriyat Island",
 ]);
 
-function districtYieldFloor(district: string): number {
+export function districtYieldFloor(district: string): number {
   if (TIER_1.has(district)) return 0.055; // 5.5%
   if (TIER_2.has(district)) return 0.065; // 6.5%
   return 0.075; // 7.5% (suburbs / older stock typically yield higher)
