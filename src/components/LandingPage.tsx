@@ -9,6 +9,7 @@ import AnimatedCounter from "@/components/ui/AnimatedCounter";
 import SparkAreaChart from "@/components/ui/SparkAreaChart";
 import FaqAccordion, { FaqItem } from "@/components/ui/FaqAccordion";
 import InsightChips from "@/components/ui/InsightChips";
+import LandingAssistant from "@/components/LandingAssistant";
 import { Transaction, Hierarchy, decodeTransactions } from "@/data/abu-dhabi";
 import { buildMarketInsights, MarketInsight } from "@/lib/analytics/insights";
 import {
@@ -24,7 +25,6 @@ import {
   LineChart,
   MapPin,
   Zap,
-  Bot,
   Handshake,
 } from "lucide-react";
 
@@ -57,13 +57,6 @@ const FEATURES = [
     body: "Ranked Buy / Watch / Avoid recommendations with a transparent opportunity score and plain-English reasoning anchored in real numbers.",
     href: "/market-analysis",
     cta: "See recommendations",
-  },
-  {
-    icon: Bot,
-    title: "Ask the AI assistant",
-    body: "Type a question in plain English — \"cheapest studio in Yas Island\" or \"2BR with yield above 7%\" — and get real numbers back instantly.",
-    href: "/assistant",
-    cta: "Start chatting",
   },
   {
     icon: Search,
@@ -193,10 +186,16 @@ function FadeUp({
 
 function LandingContent() {
   const [insights, setInsights] = useState<MarketInsight[]>([]);
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [hierarchy, setHierarchy] = useState<Hierarchy | null>(null);
+  const [marketDataLoading, setMarketDataLoading] = useState(true);
 
+  // Shared fetch: feeds both the insight chips and the embedded AI
+  // assistant widget below, so the ~6.7MB transactions.json is only
+  // downloaded and decoded once per page load.
   useEffect(() => {
     let cancelled = false;
-    async function loadInsights() {
+    async function loadMarketData() {
       try {
         const [txRes, hierRes] = await Promise.all([
           fetch("/data/transactions.json", { cache: "force-cache" }),
@@ -205,15 +204,19 @@ function LandingContent() {
         if (!txRes.ok || !hierRes.ok) return;
         const [txJson, hierJson] = await Promise.all([txRes.json(), hierRes.json()]);
         if (cancelled) return;
-        const transactions: Transaction[] = decodeTransactions(txJson);
-        const hierarchy: Hierarchy = hierJson;
-        setInsights(buildMarketInsights(transactions, hierarchy, { limit: 4 }));
+        const decoded: Transaction[] = decodeTransactions(txJson);
+        const hier: Hierarchy = hierJson;
+        setTransactions(decoded);
+        setHierarchy(hier);
+        setInsights(buildMarketInsights(decoded, hier, { limit: 4 }));
       } catch {
-        // Insight chips are decorative — fail silent, the rest of the
-        // landing page doesn't depend on this data.
+        // Insights + the assistant widget are both non-critical enhancements
+        // — fail silent, the rest of the landing page doesn't depend on them.
+      } finally {
+        if (!cancelled) setMarketDataLoading(false);
       }
     }
-    loadInsights();
+    loadMarketData();
     return () => {
       cancelled = true;
     };
@@ -321,6 +324,23 @@ function LandingContent() {
             </div>
           </motion.div>
         </div>
+      </section>
+
+      {/* ───────── AI Assistant — head feature ───────── */}
+      <section className="mx-auto max-w-[900px] px-4 py-16 lg:px-8">
+        <FadeUp className="mb-8 text-center">
+          <p className="text-xs font-semibold uppercase tracking-widest text-accent">Try it right now</p>
+          <h2 className="mt-2 text-3xl font-bold tracking-tight text-foreground">
+            Ask anything. Get a real answer.
+          </h2>
+          <p className="mx-auto mt-2 max-w-xl text-sm text-muted">
+            No signup, no external AI call — plain-English questions answered straight from
+            ADREC transaction data, live below.
+          </p>
+        </FadeUp>
+        <FadeUp delay={0.05}>
+          <LandingAssistant transactions={transactions} hierarchy={hierarchy} loading={marketDataLoading} />
+        </FadeUp>
       </section>
 
       {/* ───────── Features ───────── */}
